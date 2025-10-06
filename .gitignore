@@ -30,8 +30,6 @@ lightning_logs/
 *.onnx
 *.safetensors
 **/checkpoints/
-models/
-**/models/
 outputs/
 **/outputs/
 artifacts/
