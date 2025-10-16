@@ -34,14 +34,6 @@ class GaussianStatistics:
         self.cov = cov
         self.reg = reg
         self.L = cholesky_manual_stable(cov, reg=reg)
-        self.L_weighted = None
-        self.weighted_cov = None
-
-    def initialize_weighted_covariance(self, weighted_cov: torch.Tensor) -> None:
-        """Pre-compute a Cholesky factor for an alternative covariance matrix."""
-
-        self.weighted_cov = weighted_cov
-        self.L_weighted = cholesky_manual_stable(weighted_cov, reg=self.reg)
 
     def to(self, device):
         """Move statistics to the requested device."""
@@ -49,17 +41,12 @@ class GaussianStatistics:
         self.mean = self.mean.to(device)
         self.cov = self.cov.to(device)
         self.L = self.L.to(device)
-        if self.L_weighted is not None:
-            self.L_weighted = self.L_weighted.to(device)
-        if self.weighted_cov is not None:
-            self.weighted_cov = self.weighted_cov.to(device)
         return self
 
     def sample(
         self,
         n_samples: int | None = None,
         cached_eps: torch.Tensor | None = None,
-        use_weighted_cov: bool = False,
     ) -> torch.Tensor:
         """Draw samples from the Gaussian distribution."""
 
@@ -74,6 +61,5 @@ class GaussianStatistics:
             eps = cached_eps.to(device)
             n_samples = eps.size(0)
 
-        L = self.L_weighted if (use_weighted_cov and self.L_weighted is not None) else self.L
-        samples = self.mean.unsqueeze(0) + eps @ L.t()
+        samples = self.mean.unsqueeze(0) + eps @ self.L.t()
         return samples

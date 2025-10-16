@@ -14,6 +14,7 @@ from compensator.gaussian_statistics import GaussianStatistics
 from compensator.sldc_linear import LinearCompensator
 from compensator.sldc_weaknonlinear import WeakNonlinearCompensator
 from compensator.sldc_attention import SemanticDriftCompensator
+
 from classifier.ls_classifier_builder import LeastSquaresClassifierBuilder
 from classifier.sgd_classifier_builder import SGDClassifierBuilder
 from classifier.da_classifier_builder import LDAClassifierBuilder, QDAClassifierBuilder
@@ -35,16 +36,11 @@ class Drift_Compensator(object):
     def __init__(self, args):
         # 设备 & 基本超参
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        self.temp = 1.0
-        self.gamma = args.get('gamma', 1e-4)
         self.auxiliary_data_size = args.get('auxiliary_data_size', 1024)
         self.args = args
         self.compensate = args.get('compensate', True)
         self.use_nonlinear = args.get('use_weaknonlinear', True)
 
-        # === DPCR 关键超参（可调） ===
-        self.energy = args.get('dpcr_energy', 0.95)
-        self.r_cap  = args.get('dpcr_r_cap', 256)
 
         # 缓存 & 容器
         self.cached_Z = None
