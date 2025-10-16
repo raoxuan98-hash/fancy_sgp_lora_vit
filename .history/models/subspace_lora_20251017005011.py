@@ -96,14 +96,14 @@ class SubspaceLoRA(BaseLearner):
         self.use_feature_kd: bool = args["gamma_kd"] > 0.0
         self.gamma_kd: float = args["gamma_kd"] if self.use_feature_kd else 0.0
         self.use_aux_for_kd: bool = args["use_aux_for_kd"]
+
         self.update_teacher_each_task: bool = args["update_teacher_each_task"]
         
         self.aux_loader = None
         self.aux_iter = None
 
         self.covariances: Dict[str, torch.Tensor] | None = None
-        self.drift_compensator = DistributionCompensator(auxiliary_data_size=args["auxiliary_data_size"])
-        self.classifier_reconstructor = ClassifierReconstructor(device=self._device)
+        self.drift_compensator = Drift_Compensator(args)
 
         self.teacher_network = None   # 用于 KD
         self.prev_network = None      # 用于漂移补偿（上一个任务结束后的模型）
@@ -145,9 +145,8 @@ class SubspaceLoRA(BaseLearner):
         self._timings.drift = time.time() - drift_start
 
     def refine_classifiers(self):
-        self.fc_dict = self.classifier_reconstructor.build_classifiers(
-            self.drift_compensator.variants
-        )
+        self.fc_dict = self.drift_compensator.refine_classifiers_from_variants(self.network.fc, self.ca_epochs)
+        self.network.fc = next(iter(self.fc_dict.values()))
 
     def after_task(self) -> None:
         """Update class counters after finishing a task."""

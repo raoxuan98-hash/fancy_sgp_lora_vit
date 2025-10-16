@@ -28,17 +28,6 @@ def cholesky_manual_stable(matrix: torch.Tensor, reg: float = 1e-5) -> torch.Ten
             L[j + 1:, j] = (matrix[j + 1:, j] - s_off) / L[j, j]
     return L
 
-def symmetric_cross_entropy_loss(logits: torch.Tensor, targets: torch.Tensor,
-                                 sce_a: float = 0.5, sce_b: float = 0.5) -> torch.Tensor:
-    pred = F.softmax(logits, dim=1)
-    pred = torch.clamp(pred, min=1e-7, max=1.0)
-
-    label_one_hot = F.one_hot(targets, num_classes=pred.size(1)).float().to(pred.device)
-    label_one_hot = torch.clamp(label_one_hot, min=1e-4, max=1.0)
-
-    ce_loss = -(label_one_hot * torch.log(pred)).sum(dim=1).mean()
-    rce_loss = -(pred * torch.log(label_one_hot)).sum(dim=1).mean()
-    return sce_a * ce_loss + sce_b * rce_loss
 
 
 class ResidMLP(nn.Module):

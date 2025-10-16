@@ -15,11 +15,11 @@ from torch.utils.data import DataLoader, SubsetRandomSampler, Subset
 from torchvision import datasets, transforms
 
 from models.base import BaseLearner
-from models.sldc_compensator_rebuttal2 import Drift_Compensator# , RegularizedGaussianClassifier
-# from models.sldc_compensator import Drift_Compensator
+from classifier.classifier_builder import ClassifierReconstructor
+from compensator.distribution_compensator import DistributionCompensator
 from utils.inc_net import BaseNet
 from lora import compute_covariances
-import math 
+import math
 
 class EMASmooth:
     def __init__(self, alpha=0.9):
@@ -74,17 +74,15 @@ class SubspaceLoRA(BaseLearner):
         self._timings: Timing = Timing()
         self.time_history: List[Dict[str, float]] = []
 
-        self.sce_a: float = args["sce_a"]
-        self.sce_b: float = args["sce_b"]
-
         self.batch_size: int = args["batch_size"]
         self.iterations: int = args["iterations"]
         self.warmup_steps: int = int(args["warmup_ratio"] * self.iterations)
-        self.ca_epochs: int = args["ca_epochs"]
+
         self.lrate: float = args["lrate"]
         self.weight_decay: float = args["weight_decay"]
         self.optimizer_type: str = args["optimizer"]
-        self.compensate: bool = args["compensate"]
+
+        self.distill_head = None
 
         kd_type = args["kd_type"]
 
@@ -100,12 +98,16 @@ class SubspaceLoRA(BaseLearner):
         self.gamma_norm: float = args["gamma_norm"] if self.use_feature_kd else 0.0
         self.use_aux_for_kd: bool = args["use_aux_for_kd"]
 
+        self.update_teacher_each_task: bool = args["update_teacher_each_task"]
+        
         self.aux_loader = None
         self.aux_iter = None
 
+        self.covariances: Dict[str, torch.Tensor] | None = None
         self.drift_compensator = Drift_Compensator(args)
 
-        self.prev_network = None      # 用于漂移补偿和特征蒸馏（上一个任务结束后的模型）
+        self.teacher_network = None   # 用于 KD
+        self.prev_network = None      # 用于漂移补偿（上一个任务结束后的模型）
         self.seed: int = args["seed"]
         self.task_count: int = 0
         self.current_task_id = 0
@@ -144,18 +146,23 @@ class SubspaceLoRA(BaseLearner):
         self._timings.drift = time.time() - drift_start
 
     def refine_classifiers(self):
-        self.fc_dict = self.drift_compensator.refine_classifiers_from_variants(self.network.fc, epochs = self.ca_epochs)
-        # self.network.fc = next(iter(self.fc_dict.values()))
+        self.fc_dict = self.drift_compensator.refine_classifiers_from_variants(self.network.fc, self.ca_epochs)
+        self.network.fc = next(iter(self.fc_dict.values()))
 
     def after_task(self) -> None:
         """Update class counters after finishing a task."""
         self._known_classes = self._total_classes
+        self.update_projection_matrices()
         self.task_count += 1
 
     def incremental_train(self, data_manager) -> None:
         start_time = time.time()
         task_id = self.current_task_id
         task_size = data_manager.get_task_size(task_id)
+
+        if self.use_feature_kd:
+            if self.distill_head is None:
+                self.initialize_distillation_head()
 
         self._total_classes = self._known_classes + task_size
         self.current_task_id += 1
@@ -176,7 +183,6 @@ class SubspaceLoRA(BaseLearner):
         dataset_size = len(train_set_test_mode)
         max_samples = getattr(self, 'max_train_test_samples', 5000)
         sampler = None
-        
         if dataset_size > max_samples:
             indices = torch.randperm(dataset_size)[:max_samples].tolist()
             sampler = SubsetRandomSampler(indices)
@@ -191,10 +197,21 @@ class SubspaceLoRA(BaseLearner):
             pin_memory=True,
             persistent_workers=True)
 
-        self.prev_network = copy.deepcopy(self.network).to(self._device)
-        self.prev_network.vit.finalize_without_lora()
+        if self.use_feature_kd:
+            if self.teacher_network is None:
+                self.teacher_network = copy.deepcopy(self.network).to(self._device)
+                self.teacher_network.vit.finalize_without_lora()
+            
+            elif self.update_teacher_each_task:
+                self.teacher_network = copy.deepcopy(self.network).to(self._device)
+                self.teacher_network.vit.finalize_without_lora()
+                self.initialize_distillation_head()
 
-        # === 初始化 DriftCompensator 所需的 loader ===
+        if self.compensate:
+            self.prev_network = copy.deepcopy(self.network).cpu()
+            self.prev_network.vit.finalize_without_lora()
+
+        # === 初始化 DriftCompensator 所需的 loader，但不用于 KD ===
         self.get_aux_loader(self.args)
         self.drift_compensator.initialize_aux_loader(self.aux_trainset)
         self.network.update_fc(task_size)
@@ -229,9 +246,12 @@ class SubspaceLoRA(BaseLearner):
         fc_params: List[torch.nn.Parameter]) -> optim.Optimizer:
 
         """Create optimizer according to ``self.optimizer_type``."""
+        distill_params = list(self.distill_head.parameters()) if self.distill_head is not None else []
+
         param_groups = [
             {"params": lora_params, "lr": self.lrate, "weight_decay": self.weight_decay},
             {"params": fc_params, "lr": 1e-3 if self.optimizer_type == "adamw" else 5e-3, "weight_decay": self.weight_decay},
+            {"params": distill_params, "lr": 10 * self.lrate, "weight_decay": 0.0},
         ]
 
         if self.optimizer_type == "sgd":
@@ -250,7 +270,7 @@ class SubspaceLoRA(BaseLearner):
                 else:
                     progress = (step - self.warmup_steps) / max(1, self.iterations - self.warmup_steps)
                     initial_lr = self.lrate
-                    eta_min = getattr(self, 'eta_min', self.lrate // 3)
+                    eta_min = getattr(self, 'eta_min', self.lrate // 10)
                     lr_ratio = eta_min / initial_lr
                     cosine_decay = 0.5 * (1.0 + math.cos(math.pi * progress))
                     return lr_ratio + cosine_decay * (1.0 - lr_ratio)
@@ -258,7 +278,7 @@ class SubspaceLoRA(BaseLearner):
             def const_lr_lambda(step):
                 return 1.0
             
-            lr_lambdas = [lora_lr_lambda, const_lr_lambda]
+            lr_lambdas = [lora_lr_lambda, const_lr_lambda, const_lr_lambda]
             scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambdas, last_epoch=-1)
         return optimizer, scheduler
 
@@ -310,17 +330,16 @@ class SubspaceLoRA(BaseLearner):
 
         feats = self.network.forward_features(inputs)
 
-        # === 知识蒸馏：使用 prev_network 进行特征对齐 ===
-        if self.use_feature_kd and self.prev_network is not None:
+        # === 知识蒸馏：仅当 teacher_network 存在且 KD 启用 ===
+        if self.use_feature_kd and self.teacher_network is not None:
             with torch.no_grad():
-                teacher_feats = self.prev_network.forward_features(inputs)
-            
-            # 直接使用特征对齐损失，不需要蒸馏头
-            if self.args["kd_type"] == "feat":
-                kd_term = self.gamma_kd * feature_distillation_loss(teacher_feats, feats) + self.gamma_norm * self.norm_loss(teacher_feats, feats)
-            
-            elif self.args["kd_type"] == "cos":
-                kd_term = self.gamma_kd * cosine_similarity_loss(teacher_feats, feats)
+                teacher_feats = self.teacher_network.forward_features(inputs)
+                teacher_transformed = self.distill_head(teacher_feats)
+
+            student_norm = F.normalize(feats, dim=-1)
+            teacher_norm = F.normalize(teacher_transformed, dim=-1)
+            kd_cos = 1.0 - (student_norm * teacher_norm).sum(dim=-1).mean()
+            kd_term = self.gamma_kd * kd_cos
 
         # === 分类损失 ===
         logits = self.network.fc(feats)
@@ -328,7 +347,6 @@ class SubspaceLoRA(BaseLearner):
             targets - self._known_classes >= 0,
             targets - self._known_classes, -100)
         new_logits = logits[:, self._known_classes:]
-
         sce = symmetric_cross_entropy_loss(new_logits, new_targets_rel, self.sce_a, self.sce_b)
 
         loss = sce + kd_term
@@ -345,6 +363,8 @@ class SubspaceLoRA(BaseLearner):
 
         return loss.item(), n_correct, kd_raw
 
+
+
     @staticmethod
     def norm_loss(t_feat: torch.Tensor, s_feat: torch.Tensor) -> torch.Tensor:
         """MSE between L2‑norms of teacher / student feature vectors."""
@@ -352,6 +372,23 @@ class SubspaceLoRA(BaseLearner):
         s_norm = s_feat.norm(p=2, dim=1)
         return F.mse_loss(t_norm, s_norm)
     
+    def initialize_distillation_head(self, ratio=4, use_identity_linear=True):
+        feat_dim = self.network.vit.feature_dim
+
+        if use_identity_linear:
+            distill_head = nn.Linear(feat_dim, feat_dim, bias=False)
+            nn.init.eye_(distill_head.weight)
+            self.distill_head = distill_head.to(self._device)
+        else:
+            self.distill_head = nn.Sequential(
+                nn.Linear(feat_dim, ratio * feat_dim, bias=False),
+                nn.ReLU(),
+                nn.Linear(ratio * feat_dim, feat_dim, bias=False)
+            ).to(self._device)
+
+        logging.info(f"Initialized new distillation head for task {self.current_task_id} "
+                    f"(identity linear: {use_identity_linear})")
+
     def evaluate(
         self,
         loader: DataLoader,
@@ -368,17 +405,9 @@ class SubspaceLoRA(BaseLearner):
                 inputs = batch[0].to(self._device)
                 targets = batch[1]
                 feats = self.network.forward_features(inputs)
-                # feats = feats
 
                 for name, fc in fc_dict.items():
-                    # if isinstance(fc, RegularizedGaussianClassifier):
-                    #     preds = fc(feats).argmax(dim=1).cpu()
-                    # else:
-                    try:
-                        preds = fc(feats.cpu()).argmax(dim=1)
-                    except:
-                        preds = fc(feats).argmax(dim=1).cpu()
-
+                    preds = fc(feats).argmax(dim=1).cpu()
                     corrects[name] += (preds == targets).sum().item()
                 total += targets.size(0)
             
@@ -395,15 +424,24 @@ class SubspaceLoRA(BaseLearner):
         self.all_task_results[self.current_task_id] = results
         return results
 
+    def update_projection_matrices(self):
+        if self.current_task_id >= 0 and self.network.vit.use_projection:
+            new_covs = compute_covariances(self.network.vit, self.train_loader_test_mode)
+            if self.covariances is None:
+                self.covariances = new_covs
+            else:
+                for k in self.covariances:
+                    self.covariances[k] = 0.9 * self.covariances[k] + new_covs[k] + 1e-7 * torch.eye(self.covariances[k].size(0)).to(self.covariances[k].device)
+            self.network.update_projection_matrices(self.covariances)
+
     def loop(self, data_manager) -> Dict[str, List[float | None]]:
         self.data_manager = data_manager
-        for task_id in range(data_manager.nb_tasks):
+        for _ in range(data_manager.nb_tasks):
             self.incremental_train(data_manager)
-            if task_id == data_manager.nb_tasks - 1 or (task_id + 1) == 1 or (task_id + 1) == 2 or (task_id + 1) % 10 == 0:
-                self.refine_classifiers()
-                logging.info(f"Evaluating after task {self.current_task_id}...")
-                self.eval_task()
-                self.analyze_task_results(self.all_task_results)
+            self.refine_classifiers()
+            logging.info(f"Evaluating after task {self.current_task_id}...")
+            self.eval_task()
+            self.analyze_task_results(self.all_task_results)
             self.after_task()
         return self.all_task_results
 
@@ -422,6 +460,7 @@ class SubspaceLoRA(BaseLearner):
         # Sort task IDs and get the last one
         task_ids = sorted(all_task_results.keys())
         last_task_id = task_ids[-1]
+
 
         variant_names = set()
         for task_dict in all_task_results.values():
@@ -482,7 +521,7 @@ class SubspaceLoRA(BaseLearner):
                                  std=[0.229, 0.224, 0.225])])
 
         if aux_dataset_type == 'imagenet':
-            dataset = datasets.ImageFolder(args['auxiliary_data_path'] + '/ImageNet-2012/train', transform=transform)
+            dataset = datasets.ImageFolder(args['auxiliary_data_path'] + '/imagenet', transform=transform)
         elif aux_dataset_type == 'cifar10':
             dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
         elif aux_dataset_type == 'svhn':

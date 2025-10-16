@@ -145,9 +145,8 @@ class SubspaceLoRA(BaseLearner):
         self._timings.drift = time.time() - drift_start
 
     def refine_classifiers(self):
-        self.fc_dict = self.classifier_reconstructor.build_classifiers(
-            self.drift_compensator.variants
-        )
+        self.fc_dict = self.classifier_reconstructor.refine_classifiers(self.network.fc, self.ca_epochs)
+        self.network.fc = next(iter(self.fc_dict.values()))
 
     def after_task(self) -> None:
         """Update class counters after finishing a task."""
