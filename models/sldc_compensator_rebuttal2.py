@@ -1,33 +1,22 @@
 # -*- coding: utf-8 -*-
 import math
 import copy
-import numpy as np
-from typing import Dict
+from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Subset, TensorDataset
-from sklearn.cluster import KMeans
+from torch.utils.data import DataLoader
 import logging
 
-def cholesky_manual_stable(matrix: torch.Tensor, reg: float = 1e-5) -> torch.Tensor:
-    n = matrix.size(0)
-    L = torch.zeros_like(matrix)
-    reg_eye = reg * torch.eye(n, device=matrix.device, dtype=matrix.dtype)
-    matrix = matrix + reg_eye
-
-    for j in range(n):
-        s_diag = torch.sum(L[j, :j] ** 2, dim=0)
-        diag = matrix[j, j] - s_diag
-        L[j, j] = torch.sqrt(torch.clamp(diag, min=1e-8))
-
-        if j < n - 1:
-            s_off = L[j + 1:, :j] @ L[j, :j]
-            L[j + 1:, j] = (matrix[j + 1:, j] - s_off) / L[j, j]
-    return L
+from compensator.gaussian_statistics import GaussianStatistics
+from compensator.sldc_linear import LinearCompensator
+from compensator.sldc_weaknonlinear import WeakNonlinearCompensator
+from compensator.sldc_attention import SemanticDriftCompensator
+from classifier.ls_classifier_builder import LeastSquaresClassifierBuilder
+from classifier.sgd_classifier_builder import SGDClassifierBuilder
+from classifier.da_classifier_builder import LDAClassifierBuilder, QDAClassifierBuilder
 
 def symmetric_cross_entropy_loss(logits: torch.Tensor, targets: torch.Tensor,
                                  sce_a: float = 0.5, sce_b: float = 0.5) -> torch.Tensor:
@@ -40,393 +29,6 @@ def symmetric_cross_entropy_loss(logits: torch.Tensor, targets: torch.Tensor,
     ce_loss = -(label_one_hot * torch.log(pred)).sum(dim=1).mean()
     rce_loss = -(pred * torch.log(label_one_hot)).sum(dim=1).mean()
     return sce_a * ce_loss + sce_b * rce_loss
-
-
-class ResidMLP(nn.Module):
-    def __init__(self, dim):
-        super(ResidMLP, self).__init__()
-        self.log_scale = nn.Parameter(torch.tensor(0.0))
-        self.fc1 = nn.Linear(dim, dim, bias=False)
-        self.fc1.weight.data = torch.eye(dim)
-
-        self.fc2 = nn.Sequential(  
-            nn.Linear(dim, dim, bias=False),
-            nn.ReLU(),
-            nn.Linear(dim, dim, bias=False))
-      
-        self.alphas =  nn.Parameter(torch.tensor([1.0, 0.0]))
-
-    def forward(self, x):
-        scale = torch.exp(self.log_scale)
-        weights = F.softmax(self.alphas / scale, dim=0)
-        y1 = self.fc1(x)
-        y2 = self.fc2(x)
-        y = weights[0] * y1 + weights[1] * y2
-        return y 
-  
-    def reg_loss(self):
-        weights = F.softmax(self.alphas, dim=0)
-        return (weights[0] - 1.0) ** 2
-  
-class GaussianStatistics:
-    def __init__(self, mean: torch.Tensor, cov: torch.Tensor, reg: float = 1e-5):
-        if mean.dim() == 2 and mean.size(0) == 1:
-            mean = mean.squeeze(0)
-        assert mean.dim() == 1, "GaussianStatistics.mean should be a 1D vector (D,)"
-
-        self.mean = mean
-        self.cov = cov
-        self.reg = reg
-      
-        # 在初始化时计算Cholesky分解
-        self.L = cholesky_manual_stable(cov, reg=reg)
-        self.L_weighted = None
-        self.weighted_cov = None
-
-    def to(self, device):
-        """移动统计量到指定设备"""
-        self.mean = self.mean.to(device)
-        self.cov = self.cov.to(device)
-        self.L = self.L.to(device)
-        if self.L_weighted is not None:
-            self.L_weighted = self.L_weighted.to(device)
-        if self.weighted_cov is not None:
-            self.weighted_cov = self.weighted_cov.to(device)
-        return self
-
-    def sample(self, n_samples: int = None, cached_eps: torch.Tensor = None, use_weighted_cov: bool = False) -> torch.Tensor:
-        device = self.mean.device
-        d = self.mean.size(0)
-
-        if cached_eps is None:
-            eps = torch.randn(n_samples, d, device=device)
-        else:
-            eps = cached_eps.to(device)
-            n_samples = eps.size(0)
-
-        L = self.L_weighted if (use_weighted_cov and self.L_weighted is not None) else self.L
-        samples = self.mean.unsqueeze(0) + eps @ L.t()
-        return samples
-
-class WeakNonlinearTransform:
-    def __init__(self, input_dim: int):
-        self.net = ResidMLP(input_dim)
-        self.is_trained = False
-      
-    def train(self, features_before: torch.Tensor, features_after: torch.Tensor, 
-              epochs: int = 4000, lr: float = 0.001):
-        """训练非线性变换网络"""
-        device = features_before.device
-        self.net = self.net.to(device)
-        optimizer = torch.optim.AdamW(self.net.parameters(), lr=lr, weight_decay=1e-4)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=lr/3)
-        criterion = nn.MSELoss()
-  
-        X = F.normalize(features_before, dim=-1)
-        Y = F.normalize(features_after, dim=-1)
-
-        for epoch in range(epochs):
-            optimizer.zero_grad()
-            idx = torch.randint(0, X.size(0), (64,)).to(device)
-            x = X[idx]; y = Y[idx]
-            pred = self.net(x)
-            loss = criterion(pred, y) + 0.5 * self.net.reg_loss()
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-
-            if (epoch + 1) % 1000 == 0:
-                logging.info(f"弱非线性变换训练step {epoch+1}/{epochs}, Loss: {loss.item():.6f}")
-      
-        self.is_trained = True
-        return self.net
-  
-    def transform_features(self, features: torch.Tensor) -> torch.Tensor:
-        """变换特征"""
-        if not self.is_trained:
-            raise ValueError("非线性变换器尚未训练")
-        with torch.no_grad():
-            norms = features.norm(dim=1, keepdim=True)
-            return self.net(features / norms) * norms
-  
-    def transform_stats(self, stats_dict: Dict[int, GaussianStatistics], 
-                       n_samples: int = 5000) -> Dict[int, GaussianStatistics]:
-        """通过采样变换高斯统计量"""
-        if not self.is_trained:
-            raise ValueError("非线性变换器尚未训练")
-          
-        transformed_stats = {}
-        device = next(self.net.parameters()).device
-      
-        for cid, stat in stats_dict.items():
-            # 采样并变换
-            samples = stat.sample(n_samples).to(device)
-            transformed_samples = self.transform_features(samples)
-          
-            new_mean = transformed_samples.mean(dim=0).cpu()
-            new_cov = torch.cov(transformed_samples.T).cpu()
-  
-            transformed_stats[cid] = GaussianStatistics(new_mean, new_cov, stat.reg)
-        return transformed_stats
-
-
-class RegularizedGaussianClassifier(nn.Module):
-    def __init__(self, stats_dict: Dict[int, 'GaussianStatistics'], 
-                 class_priors: Dict[int, float] = None, 
-                 mode: str = "qda",
-                 reg_alpha: float = 0.1,
-                 reg_type: str = "shrinkage"):
-        super().__init__()
-        self.mode = mode
-        self.reg_alpha = reg_alpha
-        self.reg_type = reg_type
-        self.class_ids = sorted(stats_dict.keys())
-        self.num_classes = len(self.class_ids)
-        self.epsilon = 1e-4  # 增加正则化系数
-        self.epsilon_identity = 1e-6  # 添加单位矩阵正则化系数
-
-        # 使用 CPU 设备进行初始化
-        device = torch.device("cuda:0")
-
-        # --- 类先验 ---
-        if class_priors is None:
-            self.priors = {cid: 1.0 / self.num_classes for cid in self.class_ids}
-        else:
-            self.priors = class_priors
-
-        # --- 计算全局统计 ---
-        means_list = []
-        covs_list = []
-        for cid in self.class_ids:
-            stat = stats_dict[cid]
-            means_list.append(stat.mean.float().to(device))
-            covs_list.append(stat.cov.float().to(device))
-
-        means_tensor = torch.stack(means_list)  # [C, D]
-        covs_tensor = torch.stack(covs_list)    # [C, D, D]
-        global_mean = means_tensor.mean(dim=0)
-        global_cov = covs_tensor.mean(dim=0)
-
-        self.global_mean = nn.Parameter(global_mean, requires_grad=False)
-        self.global_cov = nn.Parameter(global_cov, requires_grad=False)
-
-        # --- 定义正则化函数 ---
-        def regularize_covariance(cov: torch.Tensor) -> torch.Tensor:
-            d = cov.size(-1)
-            if self.reg_type == "shrinkage":
-                return (1 - self.reg_alpha) * cov + self.reg_alpha * global_cov
-            elif self.reg_type == "diagonal":
-                diag_cov = torch.diag_embed(torch.diagonal(cov, dim1=-2, dim2=-1))
-                return (1 - self.reg_alpha) * cov + self.reg_alpha * diag_cov
-            elif self.reg_type == "combined":
-                diag_global = torch.diag_embed(torch.diagonal(global_cov, dim1=-2, dim2=-1))
-                target = 0.5 * global_cov + 0.5 * diag_global
-                return (1 - self.reg_alpha) * cov + self.reg_alpha * target
-            elif self.reg_type == "spherical":
-                trace = torch.trace(cov) / d
-                spherical = trace * torch.eye(d, device=cov.device)
-                return (1 - self.reg_alpha) * cov + self.reg_alpha * spherical
-            else:
-                return cov
-
-        # --- 批量正则化 + 数值稳定性处理 ---
-        covs_tensor_regularized = []
-        for cov in covs_tensor:
-            # 应用正则化
-            cov_reg = regularize_covariance(cov)
-            
-            # 确保对称性
-            cov_reg = 0.5 * (cov_reg + cov_reg.T)
-            
-            # 添加更强的正则化确保正定性
-            cov_reg += self.epsilon * torch.eye(cov_reg.size(-1), device=device)
-            
-            covs_tensor_regularized.append(cov_reg)
-
-        covs_tensor = torch.stack(covs_tensor_regularized)
-
-        # --- 安全的矩阵求逆和行列式计算 ---
-        cov_invs = []
-        log_dets = []
-        
-        for i in range(covs_tensor.size(0)):
-            cov = covs_tensor[i]
-            
-            try:
-                # 尝试 Cholesky 分解（更稳定）
-                try:
-                    L = torch.linalg.cholesky(cov + self.epsilon_identity * torch.eye(cov.size(-1), device=device))
-                    cov_inv = torch.cholesky_inverse(L)
-                    log_det = 2 * torch.sum(torch.log(torch.diag(L)))
-                except RuntimeError:
-                    # 如果 Cholesky 失败，使用 SVD
-                    U, S, Vh = torch.linalg.svd(cov + self.epsilon_identity * torch.eye(cov.size(-1), device=device))
-                    cov_inv = U @ torch.diag(1.0 / S) @ Vh
-                    log_det = torch.sum(torch.log(S))
-                
-                cov_invs.append(cov_inv)
-                log_dets.append(log_det)
-                
-            except Exception as e:
-                # 如果所有方法都失败，使用全局协方差矩阵
-                logging.warning(f"Failed to invert covariance matrix for class {i}, using global covariance")
-                global_cov_reg = global_cov + self.epsilon_identity * torch.eye(global_cov.size(-1), device=device)
-                try:
-                    U, S, Vh = torch.linalg.svd(global_cov_reg)
-                    cov_inv = U @ torch.diag(1.0 / S) @ Vh
-                    log_det = torch.sum(torch.log(S))
-                except:
-                    # 最后的手段：使用对角矩阵
-                    cov_inv = torch.diag(1.0 / torch.diag(global_cov_reg))
-                    log_det = torch.sum(torch.log(torch.diag(global_cov_reg)))
-                
-                cov_invs.append(cov_inv)
-                log_dets.append(log_det)
-
-        cov_invs = torch.stack(cov_invs)
-        log_dets = torch.tensor(log_dets, device=device)
-
-        # --- 存储所有参数在 CPU ---
-        self.means = nn.ParameterDict()
-        self.regularized_covs = nn.ParameterDict()
-        self.cov_invs = nn.ParameterDict()
-        self.log_dets = nn.ParameterDict()
-
-        for i, cid in enumerate(self.class_ids):
-            self.means[str(cid)] = nn.Parameter(means_tensor[i], requires_grad=False)
-            self.regularized_covs[str(cid)] = nn.Parameter(covs_tensor[i], requires_grad=False)
-            self.cov_invs[str(cid)] = nn.Parameter(cov_invs[i], requires_grad=False)
-            self.log_dets[str(cid)] = nn.Parameter(log_dets[i].unsqueeze(0), requires_grad=False)
-
-        # --- LDA 模式共享协方差 ---
-        if self.mode == "lda":
-            shared_cov = covs_tensor.mean(dim=0)
-            # 确保共享协方差矩阵的数值稳定性
-            shared_cov = 0.5 * (shared_cov + shared_cov.T)
-            shared_cov += self.epsilon_identity * torch.eye(shared_cov.size(-1), device=device)
-            
-            try:
-                L = torch.linalg.cholesky(shared_cov)
-                shared_cov_inv = torch.cholesky_inverse(L)
-                shared_log_det = 2 * torch.sum(torch.log(torch.diag(L)))
-            except:
-                U, S, Vh = torch.linalg.svd(shared_cov)
-                shared_cov_inv = U @ torch.diag(1.0 / S) @ Vh
-                shared_log_det = torch.sum(torch.log(S))
-            
-            self.shared_cov = nn.Parameter(shared_cov, requires_grad=False)
-            self.shared_cov_inv = nn.Parameter(shared_cov_inv, requires_grad=False)
-            self.shared_log_det = nn.Parameter(shared_log_det.unsqueeze(0), requires_grad=False)
-
-        # 缓存设备状态
-        self._current_device = torch.device("cuda:0")
-        
-        logging.info(f"[INFO] GaussianClassifier initialized on GPU with {self.num_classes} classes (mode={mode})")
-        self._to_cpu()
-
-    def _to_device(self, device: torch.device):
-        """将参数移动到指定设备"""
-        if self._current_device == device:
-            return
-            
-        # 移动所有参数到目标设备
-        self.global_mean.data = self.global_mean.to(device)
-        self.global_cov.data = self.global_cov.to(device)
-        
-        for cid in self.class_ids:
-            cid_str = str(cid)
-            self.means[cid_str].data = self.means[cid_str].to(device)
-            self.regularized_covs[cid_str].data = self.regularized_covs[cid_str].to(device)
-            self.cov_invs[cid_str].data = self.cov_invs[cid_str].to(device)
-            self.log_dets[cid_str].data = self.log_dets[cid_str].to(device)
-            
-        if self.mode == "lda":
-            self.shared_cov.data = self.shared_cov.to(device)
-            self.shared_cov_inv.data = self.shared_cov_inv.to(device)
-            self.shared_log_det.data = self.shared_log_det.to(device)
-            
-        self._current_device = device
-
-    def _to_cpu(self):
-        """将参数移回 CPU"""
-        if self._current_device == torch.device("cpu"):
-            return
-            
-        # 移动所有参数回 CPU
-        self.global_mean.data = self.global_mean.cpu()
-        self.global_cov.data = self.global_cov.cpu()
-        
-        for cid in self.class_ids:
-            cid_str = str(cid)
-            self.means[cid_str].data = self.means[cid_str].cpu()
-            self.regularized_covs[cid_str].data = self.regularized_covs[cid_str].cpu()
-            self.cov_invs[cid_str].data = self.cov_invs[cid_str].cpu()
-            self.log_dets[cid_str].data = self.log_dets[cid_str].cpu()
-            
-        if self.mode == "lda":
-            self.shared_cov.data = self.shared_cov.cpu()
-            self.shared_cov_inv.data = self.shared_cov_inv.cpu()
-            self.shared_log_det.data = self.shared_log_det.cpu()
-            
-        self._current_device = torch.device("cpu")
-
-    # --- 判别函数 ---  
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # 根据输入设备移动参数
-        input_device = x.device
-        self._to_device(input_device)
-        
-        try:
-            batch_size = x.size(0)
-            logits = torch.zeros(batch_size, self.num_classes, device=input_device)
-
-            for idx, cid in enumerate(self.class_ids):
-                if self.mode == "qda":
-                    logits[:, idx] = self._qda_discriminant(x, cid)
-                else:
-                    logits[:, idx] = self._lda_discriminant(x, cid)
-            return logits
-        finally:
-            # 无论是否发生异常，都确保参数移回 CPU
-            self._to_cpu()
-
-    def _qda_discriminant(self, x: torch.Tensor, class_id: int) -> torch.Tensor:
-        cid_str = str(class_id)
-        # 参数已经在正确的设备上
-        mean = self.means[cid_str]
-        cov_inv = self.cov_invs[cid_str]
-        log_det = self.log_dets[cid_str]
-        prior = torch.log(torch.tensor(self.priors[class_id], device=x.device))
-
-        x_centered = x - mean.unsqueeze(0)
-        mahalanobis = 0.5 * torch.sum(x_centered @ cov_inv * x_centered, dim=1)
-        return -mahalanobis - 0.5 * log_det + prior
-
-    def _lda_discriminant(self, x: torch.Tensor, class_id: int) -> torch.Tensor:
-        cid_str = str(class_id)
-        # 参数已经在正确的设备上
-        mean = self.means[cid_str]
-        shared_cov_inv = self.shared_cov_inv
-        prior = torch.log(torch.tensor(self.priors[class_id], device=x.device))
-        term1 = x @ shared_cov_inv @ mean
-        term2 = 0.5 * mean @ shared_cov_inv @ mean
-        return term1 - term2 + prior
-
-    def predict(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.argmax(self.forward(x), dim=1)
-
-    def predict_proba(self, x: torch.Tensor) -> torch.Tensor:
-        return F.softmax(self.forward(x), dim=1)
-
-    def cuda(self, device=None):
-        super().cuda(device)
-        self._current_device = torch.device("cpu")
-        return self
-
-    def cpu(self):
-        super().cpu()
-        self._current_device = torch.device("cpu")
-        return self
 
 
 class Drift_Compensator(object):
@@ -474,118 +76,72 @@ class Drift_Compensator(object):
         return feats_before, feats_after, targets
 
     def compute_linear_transform(self, features_before: torch.Tensor, features_after: torch.Tensor, normalize: bool = True):
-        """基于前/后特征构建线性补偿矩阵 W（岭回归闭式解）。"""
+        """使用通用 LinearCompensator 拟合前后特征之间的线性映射。"""
+
         logging.info("基于当前任务的前后特征构建线性补偿器(alpha_1-SLDC)")
-        device = self.device
-        features_before = features_before.to(device)
-        features_after = features_after.to(device)
+        linear_comp = LinearCompensator(
+            input_dim=features_before.size(1),
+            gamma=self.gamma,
+            temp=self.temp,
+            device=self.device,
+        )
+        W_global = linear_comp.train(features_before, features_after, normalize=normalize)
 
-        if normalize:
-            X = F.normalize(features_before, dim=1)
-            Y = F.normalize(features_after, dim=1)
-        else:
-            X = features_before
-            Y = features_after
-
-        n_samples, dim = X.size()
-        XTX = X.T @ X + self.gamma * torch.eye(dim, device=device)
-        XTY = X.T @ Y
-        W_global = torch.linalg.solve(XTX, XTY)
-
-        # 温和收缩到单位映射，避免数值炸裂
-        weight = math.exp(-n_samples / (self.temp * dim))
-        W_global = (1 - weight) * W_global + weight * torch.eye(dim, device=device)
-
-        feats_new_after_pred = features_before @ W_global
-        feat_diffs = (features_after - features_before).norm(dim=1).mean().item()
-        feat_diffs_pred = (features_after - feats_new_after_pred).norm(dim=1).mean().item()
-
-        s = torch.linalg.svdvals(W_global)
-        max_singular = s[0].item()
-        min_singular = s[-1].item()
+        with torch.no_grad():
+            fb = features_before.to(self.device)
+            fa = features_after.to(self.device)
+            preds = fb @ W_global
+            feat_diffs = (fa - fb).norm(dim=1).mean().item()
+            feat_diffs_pred = (fa - preds).norm(dim=1).mean().item()
+            s = torch.linalg.svdvals(W_global)
+            max_singular = s[0].item()
+            min_singular = s[-1].item()
+            weight = math.exp(-fb.size(0) / (self.temp * fb.size(1)))
 
         logging.info(
             f"仿射变换矩阵对角线元素均值：{W_global.diag().mean().item():.4f}，"
-            f"融合权重：{weight:.4f}，样本数量：{n_samples}；"
+            f"融合权重：{weight:.4f}，样本数量：{fb.size(0)}；"
             f"线性修正前差异：{feat_diffs:.4f}；修正后差异：{feat_diffs_pred:.4f}；"
             f"最大奇异值：{max_singular:.2f}；最小奇异值：{min_singular:.2f}")
-        return W_global
 
-    def compute_weaknonlinear_transform(self, features_before: torch.Tensor, features_after: torch.Tensor) -> 'WeakNonlinearTransform':
+        return linear_comp
+
+    def compute_weaknonlinear_transform(self, features_before: torch.Tensor, features_after: torch.Tensor):
         """基于前/后特征训练弱非线性变换器（Residual MLP）。"""
-        logging.info("基于当前任务的前后特征构建弱非线性补偿器")
-        device = self.device
-        features_before = features_before.to(device)
-        features_after = features_after.to(device)
 
-        transform = WeakNonlinearTransform(input_dim=features_before.size(1))
-        transform.train(features_before, features_after)
+        logging.info("基于当前任务的前后特征构建弱非线性补偿器")
+        transform = WeakNonlinearCompensator(
+            input_dim=features_before.size(1),
+            device=self.device,
+        )
+        transform.train(features_before.to(self.device), features_after.to(self.device))
 
         with torch.no_grad():
-            transformed_features = transform.transform_features(features_before)
-            feat_diffs = (features_after - features_before).norm(dim=1).mean().item()
-            feat_diffs_nonlinear = (features_after - transformed_features).norm(dim=1).mean().item()
-            logging.info(f"非线性修正前差异：{feat_diffs:.4f}；修正后差异：{feat_diffs_nonlinear:.4f}")
+            fb = features_before.to(self.device)
+            fa = features_after.to(self.device)
+            transformed_features = transform.transform_features(fb)
+            feat_diffs = (fa - fb).norm(dim=1).mean().item()
+            feat_diffs_nonlinear = (fa - transformed_features).norm(dim=1).mean().item()
+            logging.info(
+                f"非线性修正前差异：{feat_diffs:.4f}；修正后差异：{feat_diffs_nonlinear:.4f}")
 
         return transform
 
-    def semantic_drift_compensation(self, old_stats_dict: Dict[int, 'GaussianStatistics'],
+    def semantic_drift_compensation(self, old_stats_dict: Dict[int, GaussianStatistics],
                                     features_before: torch.Tensor, features_after: torch.Tensor,
-                                    labels: torch.Tensor, use_auxiliary: bool = False) -> Dict[int, 'GaussianStatistics']:
+                                    labels: torch.Tensor, use_auxiliary: bool = False) -> Dict[int, GaussianStatistics]:
         if not old_stats_dict:
             return {}
 
-        device = self.device
-        features_before = features_before.to(device)
-        features_after = features_after.to(device)
+        sdc = SemanticDriftCompensator(
+            input_dim=features_before.size(1),
+            sigma=1.0,
+            device=self.device,
+        )
+        sdc.train(features_before.to(self.device), features_after.to(self.device))
+        compensated_stats = sdc.compensate(old_stats_dict)
 
-        drift_vectors = features_after - features_before
-        compensated_stats = {}
-
-        for class_id, old_stat in old_stats_dict.items():
-            old_prototype = old_stat.mean.to(device)
-            distances = torch.cdist(features_before, old_prototype.unsqueeze(0)).squeeze(1)
-          
-            # 关键修改：数值稳定的权重计算
-            # 1. 自适应设置sigma - 基于距离的统计特性
-            # sigma = distances.median().item() * 0.5  # 使用中位数的一半作为sigma
-            sigma = 1.0  # 确保sigma不会太小
-          
-            # 2. 数值稳定的权重计算
-            # 先计算负的平方距离（不除2sigma^2）
-            neg_sq_distances = -distances**2
-          
-            # 找到最大值用于数值稳定性
-            max_neg_sq = neg_sq_distances.max()
-          
-            # 使用log-sum-exp技巧的变体来避免数值下溢
-            # weights = exp(neg_sq_distances/(2*sigma^2) - max_neg_sq/(2*sigma^2)) * exp(max_neg_sq/(2*sigma^2))
-            scaled_neg_sq = (neg_sq_distances - max_neg_sq) / (2 * sigma**2)
-            weights = torch.exp(scaled_neg_sq)
-          
-            # 现在weights的最大值是1，避免了数值下溢
-            weight_sum = weights.sum()
-          
-            if weight_sum < 1e-20:  # 如果权重和仍然太小，使用均匀权重
-                logging.info(f"[SDC-WARN] Class {class_id}: weights too small ({weight_sum:.2e}), using uniform weights")
-                weights = torch.ones_like(weights) / len(weights)
-                weight_sum = 1.0
-          
-            weighted_drift = (weights.unsqueeze(1) * drift_vectors).sum(dim=0) / weight_sum
-            compensated_mean = old_prototype + weighted_drift
-
-            d = old_stat.mean.size(0)
-            unit_cov = torch.eye(d, device=device, dtype=old_stat.mean.dtype)
-            compensated_stats[class_id] = GaussianStatistics(compensated_mean.cpu(), unit_cov, old_stat.reg)
-
-            if class_id == list(old_stats_dict.keys())[0]:
-                drift_norm = weighted_drift.norm().item()
-                mean_weight = weights.mean().item()
-                logging.info(f"[SDC] Class {class_id}: sigma = {sigma:.4f}")
-                logging.info(f"[SDC] distances: mean = {distances.mean():.4f}, max = {distances.max():.4f}")
-                logging.info(f"[SDC] weights: mean = {mean_weight:.6f}, sum = {weight_sum:.6f}, max = {weights.max():.6f}")
-                logging.info(f"[SDC] drift norm = {drift_norm:.4f}")
-
+        logging.info(f"[SDC] Drift compensation applied on {len(compensated_stats)} classes (aux={use_auxiliary})")
         return compensated_stats
 
 
@@ -701,15 +257,15 @@ class Drift_Compensator(object):
         if self.cached_Z is None:
             self.cached_Z = torch.randn(50000, feats_after.size(1))
 
-        W = None
-        W_current_only = None
+        linear_global = None
+        linear_current_only = None
         weaknonlinear_transform = None
         weaknonlinear_transform_current_only = None
 
         if self.compensate and task_id > 1:
             # —— 仅用当前任务拟合 W
-            W_current_only = self.compute_linear_transform(feats_before, feats_after)
-            self.linear_transforms_current_only[task_id] = W_current_only.cpu()
+            linear_current_only = self.compute_linear_transform(feats_before, feats_after)
+            self.linear_transforms_current_only[task_id] = linear_current_only
 
             if self.use_nonlinear:
                 weaknonlinear_transform_current_only = self.compute_weaknonlinear_transform(feats_before, feats_after)
@@ -722,15 +278,15 @@ class Drift_Compensator(object):
                 feats_before_combined = torch.cat([feats_before, feats_aux_before], dim=0)
                 feats_after_combined = torch.cat([feats_after, feats_aux_after], dim=0)
 
-                W = self.compute_linear_transform(feats_before_combined, feats_after_combined)
-                self.linear_transforms[task_id] = W.cpu()
+                linear_global = self.compute_linear_transform(feats_before_combined, feats_after_combined)
+                self.linear_transforms[task_id] = linear_global
 
                 if self.use_nonlinear:
                     weaknonlinear_transform = self.compute_weaknonlinear_transform(feats_before_combined, feats_after_combined)
                     self.weaknonlinear_transforms[task_id] = weaknonlinear_transform
             else:
                 # 如果没有ADE数据，使用当前任务的W
-                W = W_current_only
+                linear_global = linear_current_only
                 weaknonlinear_transform = weaknonlinear_transform_current_only
 
         # 基于"当前特征（after）"计算原始统计量
@@ -772,15 +328,15 @@ class Drift_Compensator(object):
 
         if self.compensate and task_id > 1:
             # ============ 线性补偿（全局 W） ============
-            if "alpha_1-SLDC + ADE" in self.variants and W is not None:
-                stats_compensated = self.transform_stats_with_W(self.variants['alpha_1-SLDC + ADE'], W)
+            if "alpha_1-SLDC + ADE" in self.variants and linear_global is not None:
+                stats_compensated = self.transform_stats_with_W(self.variants['alpha_1-SLDC + ADE'], linear_global)
             else:
                 stats_compensated = {}
             self.variants["alpha_1-SLDC + ADE"] = stats_compensated
             self.variants["alpha_1-SLDC + ADE"].update(copy.deepcopy(stats))
 
-            if "alpha_1-SLDC" in self.variants and W_current_only is not None:
-                stats_compensated_current = self.transform_stats_with_W(self.variants['alpha_1-SLDC'], W_current_only)
+            if "alpha_1-SLDC" in self.variants and linear_current_only is not None:
+                stats_compensated_current = self.transform_stats_with_W(self.variants['alpha_1-SLDC'], linear_current_only)
             else:
                 stats_compensated_current = {}
             self.variants["alpha_1-SLDC"] = stats_compensated_current
@@ -789,7 +345,7 @@ class Drift_Compensator(object):
             # ============ 弱非线性补偿 ============
             if self.use_nonlinear and weaknonlinear_transform is not None:
                 if "alpha_2-SLDC + ADE" in self.variants:
-                    stats_weaknonlinear = weaknonlinear_transform.transform_stats(self.variants["alpha_2-SLDC + ADE"])
+                    stats_weaknonlinear = weaknonlinear_transform.compensate(self.variants["alpha_2-SLDC + ADE"])
                 else:
                     stats_weaknonlinear = {}
                 self.variants["alpha_2-SLDC + ADE"] = stats_weaknonlinear
@@ -797,22 +353,22 @@ class Drift_Compensator(object):
 
             if self.use_nonlinear and weaknonlinear_transform_current_only is not None:
                 if "alpha_2-SLDC" in self.variants:
-                    stats_weaknonlinear_current = weaknonlinear_transform_current_only.transform_stats(self.variants["alpha_2-SLDC"])
+                    stats_weaknonlinear_current = weaknonlinear_transform_current_only.compensate(self.variants["alpha_2-SLDC"])
                 else:
                     stats_weaknonlinear_current = {}
                 self.variants["alpha_2-SLDC"] = stats_weaknonlinear_current
                 self.variants["alpha_2-SLDC"].update(copy.deepcopy(stats))
 
             # ============ LDC（单位协方差） ============
-            if "LDC" in self.variants and W_current_only is not None:
-                stats_ldc_compensated = self.transform_stats_with_W(self.variants['LDC'], W_current_only)
+            if "LDC" in self.variants and linear_current_only is not None:
+                stats_ldc_compensated = self.transform_stats_with_W(self.variants['LDC'], linear_current_only)
             else:
                 stats_ldc_compensated = {}
             self.variants["LDC"] = stats_ldc_compensated
             self.variants["LDC"].update(copy.deepcopy(stats_unit_cov))
 
-            if "LDC + ADE" in self.variants and W is not None:
-                stats_ldc_ade_compensated = self.transform_stats_with_W(self.variants['LDC + ADE'], W)
+            if "LDC + ADE" in self.variants and linear_global is not None:
+                stats_ldc_ade_compensated = self.transform_stats_with_W(self.variants['LDC + ADE'], linear_global)
             else:
                 stats_ldc_ade_compensated = {}
             self.variants["LDC + ADE"] = stats_ldc_ade_compensated
@@ -841,14 +397,15 @@ class Drift_Compensator(object):
             dpcrr_corrected_stats = {}
 
             # 历史类来自 DPCR（上一轮构建时保存的旧类统计）
-            if "DPCR" in self.variants and len(self.variants["DPCR"]) > 0:
+            if "DPCR" in self.variants and len(self.variants["DPCR"]) > 0 and linear_current_only is not None:
                 old_stats = self.variants["DPCR"]
+                W_current = linear_current_only.W.detach().to(self.device)
                 for cid, st in old_stats.items():
                     mu_old = st.mean.to(self.device).float()
                     cov_old = st.cov.to(self.device).float()
-                    M2 = cov_old 
+                    M2 = cov_old
                     # U_r = self._principal_subspace_from_cov(M2)
-                    P_ic = W_current_only # @ (U_r @ U_r.T)
+                    P_ic = W_current  # @ (U_r @ U_r.T)
 
                     # 校正旧类统计到 θ_t 域
                     mu_hat = mu_old @ P_ic
@@ -864,14 +421,15 @@ class Drift_Compensator(object):
 
 
             dpcrr_corrected_stats = {}
-            if "DPCR + ADE" in self.variants and len(self.variants["DPCR + ADE"]) > 0:
+            if "DPCR + ADE" in self.variants and len(self.variants["DPCR + ADE"]) > 0 and linear_global is not None:
                 old_stats = self.variants["DPCR + ADE"]
+                W_global_matrix = linear_global.W.detach().to(self.device)
                 for cid, st in old_stats.items():
                     mu_old = st.mean.to(self.device).float()
                     cov_old = st.cov.to(self.device).float()
-                    M2 = cov_old 
+                    M2 = cov_old
                     # U_r = self._principal_subspace_from_cov(M2)
-                    P_ic = W # @ (U_r @ U_r.T)
+                    P_ic = W_global_matrix  # @ (U_r @ U_r.T)
 
                     # 校正旧类统计到 θ_t 域
                     mu_hat = mu_old @ P_ic
@@ -936,169 +494,60 @@ class Drift_Compensator(object):
         return U_r
 
 
-    def transform_stats_with_W(self, stats_dict: Dict[int, object], W: torch.Tensor) -> Dict[int, object]:
-        """全局线性变换：x' = x @ W  =>  μ' = μ @ W,  Σ' = W^T Σ W"""
-        if W is None or stats_dict is None or len(stats_dict) == 0:
+    def transform_stats_with_W(self, stats_dict: Dict[int, GaussianStatistics],
+                               linear_comp: Optional[LinearCompensator]) -> Dict[int, GaussianStatistics]:
+        """使用线性补偿器对高斯统计进行批量变换。"""
+
+        if linear_comp is None or not stats_dict:
             return {}
-        W = W.cpu()
-        WT = W.t()
-        out = {}
-        for cid, stat in stats_dict.items():
-            mean = stat.mean @ W
-            cov = WT @ stat.cov @ W + 1e-3 * torch.eye(stat.cov.size(0), device=stat.cov.device)
-            new_stat = GaussianStatistics(mean, cov, reg=stat.reg)
-            out[cid] = new_stat
-        return out
+        return linear_comp.compensate(stats_dict)
 
-    def train_classifier_with_cached_samples(self, fc: nn.Module, stats: Dict[int, object],
+    def train_classifier_with_cached_samples(self, _: nn.Module, stats: Dict[int, GaussianStatistics],
                                              epochs: int = 5) -> nn.Module:
-        """用缓存噪声从高斯统计采样进行 SGD 训练的线性分类器。"""
-        epochs = 5
-        num_samples_per_class = 1024
-        batch_size = max(32 * max(1, len(stats) // 10), 32)
-        lr = 0.01
+        """利用统一的 SGDClassifierBuilder 构建基于高斯采样的线性分类器。"""
 
-        fc = copy.deepcopy(fc).to(self.device)
-        optimizer = torch.optim.SGD(fc.parameters(), lr=lr, weight_decay=1e-4)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=epochs, eta_min=lr / 10)
+        builder = SGDClassifierBuilder(
+            cached_Z=self.cached_Z,
+            device=self.device,
+            epochs=epochs,
+            lr=0.01,
+        )
+        model = builder.build(stats)
+        logging.info(f"[INFO] SGD builder finished: {len(stats)} classes, epochs={epochs}")
+        return model
 
-        cached_Z = self.cached_Z.to(self.device)
-
-        all_samples, all_targets = [], []
-        class_means = []
-
-        for class_id, gauss in stats.items():
-            class_mean = gauss.mean.to(self.device)
-            class_means.append(class_mean)
-
-            L_matrix = gauss.L.to(self.device)
-
-            start_idx = (int(class_id) * num_samples_per_class) % cached_Z.size(0)
-            end_idx = start_idx + num_samples_per_class
-            if end_idx > cached_Z.size(0):
-                Z = torch.cat([cached_Z[start_idx:], cached_Z[: end_idx - cached_Z.size(0)]], dim=0)
-            else:
-                Z = cached_Z[start_idx:end_idx]
-
-            samples = class_mean + Z @ L_matrix.t()
-            targets = torch.full((num_samples_per_class,), int(class_id), device=self.device)
-
-            all_samples.append(samples)
-            all_targets.append(targets)
-
-        class_means = torch.stack(class_means)
-        inputs = torch.cat(all_samples, dim=0).detach().clone()
-        targets = torch.cat(all_targets, dim=0).detach().clone()
-
-        for epoch in range(epochs):
-            perm = torch.randperm(inputs.size(0), device=self.device)
-            inputs_shuffled = inputs[perm]
-            targets_shuffled = targets[perm]
-
-            losses = 0.0
-            num_samples = inputs.size(0)
-            num_complete_batches = num_samples // batch_size
-
-            for batch_idx in range(num_complete_batches + 1):
-                start_idx = batch_idx * batch_size
-                end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                if start_idx >= end_idx:
-                    continue
-
-                inp = inputs_shuffled[start_idx:end_idx]
-                tgt = targets_shuffled[start_idx:end_idx]
-
-                optimizer.zero_grad()
-                logits = fc(inp)
-                loss = symmetric_cross_entropy_loss(logits, tgt)
-                loss.backward()
-                optimizer.step()
-                losses += loss.item() * (end_idx - start_idx)
-
-            loss_epoch = losses / num_samples
-            if (epoch + 1) % 2 == 0:
-                logging.info(f"[INFO] Cached-sample classifier training: Epoch {epoch + 1}, Loss: {loss_epoch:.4f}")
-            scheduler.step()
-
-        return fc
-
-    def refine_classifiers_from_variants(self, fc: nn.Module, epochs: int = 5, 
+    def refine_classifiers_from_variants(self, fc: nn.Module, epochs: int = 5,
                                         reg_alpha: float = 0.5, reg_type: str = "shrinkage") -> Dict[str, nn.Module]:
-        """
-        对 self.variants 中每个分布训练/构建一个分类器，根据变体名称使用不同的分类器类型。
-        """
+        """根据各分布变体构建相应的分类器。"""
+
         assert hasattr(self, 'variants') and len(self.variants) > 0, "No variants found. Call build_all_variants first."
 
-        out = {}
-      
+        out: Dict[str, nn.Module] = {}
+        lda_builder = LDAClassifierBuilder(reg_alpha=reg_alpha, reg_type=reg_type, device=self.device)
+        qda_builder = QDAClassifierBuilder(reg_alpha=reg_alpha, reg_type=reg_type, device=self.device)
+
         for name, stats in self.variants.items():
             if len(stats) == 0:
                 logging.info(f"[WARNING] Variant '{name}' has no statistics, skipping...")
                 continue
-              
-            class_priors = {cid: 1.0 / len(stats) for cid in stats.keys()}
-            
-            # LDC、SDC 系列 -> 使用 SGD 训练
+
             if name in ["LDC", "LDC + ADE", "SDC", "SDC + ADE"]:
                 clf = self.train_classifier_with_cached_samples(fc, stats, epochs=epochs)
                 out[name] = clf
                 logging.info(f"[INFO] {name}: SGD with {len(stats)} classes")
 
-            # SeqFT without Cov -> LDA（共享协方差）
-            elif name == "SeqFT without Cov":
-                clf = RegularizedGaussianClassifier(
-                    stats_dict=stats,
-                    class_priors=class_priors,
-                    mode="lda",               
-                    reg_alpha=reg_alpha,
-                    reg_type=reg_type
-                )
-                clf = clf.to(self.device)
-                out[name] = clf
-                logging.info(f"[INFO] {name}: LDA with {len(stats)} classes")
-
-
             elif name in ["DPCR", "DPCR + ADE"]:
-                # QDA
-                # qda_clf = RegularizedGaussianClassifier(
-                #     stats_dict=stats,
-                #     class_priors=class_priors,
-                #     mode="qda",
-                #     reg_alpha=reg_alpha,
-                #     reg_type=reg_type
-                # ).to(self.device)
-                # out[f"{name}"] = qda_clf
-
-                # Least Squares
                 ls_clf = self.train_least_squares_classifier(stats, reg_lambda=1e-3)
-                out[f"{name}"] = ls_clf
-
+                out[name] = ls_clf
                 logging.info(f"[INFO] {name}: LS with {len(stats)} classes")
 
-
-            # 新增：SeqFT + LDA -> LDA（直接用当前统计量）
-            elif name == "SeqFT + LDA":
-                clf = RegularizedGaussianClassifier(
-                    stats_dict=stats,
-                    class_priors=class_priors,
-                    mode="lda",
-                    reg_alpha=reg_alpha,
-                    reg_type=reg_type
-                )
-                clf = clf.to(self.device)
+            elif name in ["SeqFT without Cov", "SeqFT + LDA"]:
+                clf = lda_builder.build(stats)
                 out[name] = clf
                 logging.info(f"[INFO] {name}: LDA with {len(stats)} classes")
 
-            # 新增：SeqFT + QDA -> QDA
             elif name == "SeqFT + QDA":
-                clf = RegularizedGaussianClassifier(
-                    stats_dict=stats,
-                    class_priors=class_priors,
-                    mode="qda",
-                    reg_alpha=reg_alpha,
-                    reg_type=reg_type
-                )
-                clf = clf.to(self.device)
+                clf = qda_builder.build(stats)
                 out[name] = clf
                 logging.info(f"[INFO] {name}: QDA with {len(stats)} classes")
 
@@ -1107,32 +556,14 @@ class Drift_Compensator(object):
                 out[name] = clf
                 logging.info(f"[INFO] {name}: SGD with {len(stats)} classes")
 
-            # alpha_1/alpha_2 系列 -> 同时导出 LDA/QDA/SGD 三个头
             elif name in ["alpha_1-SLDC", "alpha_2-SLDC", "alpha_1-SLDC + ADE", "alpha_2-SLDC + ADE"]:
-                # LDA
-                lda_clf = RegularizedGaussianClassifier(
-                    stats_dict=stats,
-                    class_priors=class_priors,
-                    mode="lda",
-                    reg_alpha=reg_alpha,
-                    reg_type=reg_type
-                ).to(self.device)
-                out[f"{name} (LDA)"] = lda_clf
-
-                # QDA
-                qda_clf = RegularizedGaussianClassifier(
-                    stats_dict=stats,
-                    class_priors=class_priors,
-                    mode="qda",
-                    reg_alpha=reg_alpha,
-                    reg_type=reg_type
-                ).to(self.device)
-                out[f"{name} (QDA)"] = qda_clf
-
-                # SGD
+                lda_clf = lda_builder.build(stats)
+                qda_clf = qda_builder.build(stats)
                 sgd_clf = self.train_classifier_with_cached_samples(fc, stats, epochs=epochs)
-                out[f"{name} (SGD)"] = sgd_clf
 
+                out[f"{name} (LDA)"] = lda_clf
+                out[f"{name} (QDA)"] = qda_clf
+                out[f"{name} (SGD)"] = sgd_clf
                 logging.info(f"[INFO] {name}: LDA/QDA/SGD with {len(stats)} classes")
 
             else:
@@ -1140,7 +571,6 @@ class Drift_Compensator(object):
                 clf = self.train_classifier_with_cached_samples(fc, stats, epochs=epochs)
                 out[name] = clf
 
-            # 简单运行一次前向，检查设备一致性
             with torch.no_grad():
                 test_input = torch.randn(2, list(stats.values())[0].mean.size(0), device=self.device)
                 if name in ["alpha_1-SLDC", "alpha_2-SLDC", "alpha_1-SLDC + ADE", "alpha_2-SLDC + ADE"]:
@@ -1150,90 +580,23 @@ class Drift_Compensator(object):
                 else:
                     _ = out[name](test_input)
 
-            # except Exception as e:
-            #     logging.info(f"[ERROR] Failed to create classifier for variant '{name}': {e}")
-            #     logging.info(f"[INFO] Falling back to SGD for variant '{name}'")
-            #     clf = self.train_classifier_with_cached_samples(fc, stats, epochs=epochs)
-            #     out[name] = clf
-
         logging.info(f"[INFO] Created {len(out)} classifiers from variants.")
 
         for key, value in out.items():
             out[key] = value.cpu()
         return out
 
-    def train_least_squares_classifier(self, stats: Dict[int, object], reg_lambda: float = 1e-3) -> nn.Module:
-        """
-        基于高斯采样的最小二乘法分类器。
-        给定高斯统计量 stats = {cid: GaussianStatistics}，生成样本并解析解 W。
-        特征归一化到单位球面后再构建分类器。
-        """
+    def train_least_squares_classifier(self, stats: Dict[int, GaussianStatistics], reg_lambda: float = 1e-3) -> nn.Module:
+        """使用 LeastSquaresClassifierBuilder 构建最小二乘分类器。"""
 
-        class NormalizeLayer(nn.Module):
-            """自定义L2归一化层"""
-            def __init__(self):
-                super().__init__()
-            
-            def forward(self, x):
-                return F.normalize(x, p=2, dim=1)
-               
-        device = self.device
-        num_classes = len(stats)
-        num_samples_per_class = 1024
-        d = list(stats.values())[0].mean.size(0)
-
-        all_samples = []
-        all_targets = []
-
-        cached_Z = self.cached_Z.to(device)
-
-        for class_id, gauss in stats.items():
-            mean = gauss.mean.to(device)
-            L = gauss.L.to(device)
-            start_idx = (int(class_id) * num_samples_per_class) % cached_Z.size(0)
-            end_idx = start_idx + num_samples_per_class
-            if end_idx > cached_Z.size(0):
-                Z = torch.cat([cached_Z[start_idx:], cached_Z[: end_idx - cached_Z.size(0)]], dim=0)
-            else:
-                Z = cached_Z[start_idx:end_idx]
-
-            samples = mean + Z @ L.t()
-            targets = torch.full((num_samples_per_class,), int(class_id), device=device)
-            all_samples.append(samples)
-            all_targets.append(targets)
-
-        X = torch.cat(all_samples, dim=0)  # [N, D]
-        y = torch.cat(all_targets, dim=0)  # [N]
-        N = X.size(0)
-
-        # --- 特征归一化到单位球面 ---
-        X_normalized = F.normalize(X, p=2, dim=1)  # L2归一化，使特征在单位球面上
-
-        # --- 构建 one-hot label ---
-        Y = F.one_hot(y, num_classes=num_classes).float()  # [N, C]
-
-        # --- 闭式最小二乘解 ---
-
-        try:
-            reg_I = reg_lambda * torch.eye(d, device=device)
-            W = torch.linalg.solve(X_normalized.T @ X_normalized + reg_I, X_normalized.T @ Y)
-        except torch._C._LinAlgError:
-            # 如果奇异，使用伪逆
-            logging.info("Matrix is singular, using pseudoinverse instead")
-            W = torch.linalg.lstsq(X_normalized.T @ X_normalized + reg_I, X_normalized.T @ Y).solution
-
-        # --- 构建包含归一化和线性层的序列模型 ---
-        classifier = nn.Sequential(
-            NormalizeLayer(),  # 自定义归一化层
-            nn.Linear(d, num_classes, bias=False)
-        ).to(device)
-        
-        # 设置线性层权重
-        classifier[1].weight.data = W.T.clone()  # Linear expects [C, D]
-        
-        logging.info(f"[INFO] LS-classifier built: {num_classes} classes, dim={d}, λ={reg_lambda}")
-        logging.info(f"[INFO] Features normalized to unit sphere, model structure: Normalize -> Linear")
-        return classifier
+        builder = LeastSquaresClassifierBuilder(
+            cached_Z=self.cached_Z,
+            reg_lambda=reg_lambda,
+            device=self.device,
+        )
+        model = builder.build(stats)
+        logging.info(f"[INFO] LS builder finished: {len(stats)} classes, λ={reg_lambda}")
+        return model
 
 
     def initialize_aux_loader(self, train_set):

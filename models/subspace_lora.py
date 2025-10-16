@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader, SubsetRandomSampler, Subset
 from torchvision import datasets, transforms
 
 from models.base import BaseLearner
-from models.sldc_modules2 import Drift_Compensator
+from models.sldc_compensator_rebuttal2 import Drift_Compensator
 from utils.inc_net import BaseNet
 from lora import compute_covariances
 import math 
