@@ -17,6 +17,7 @@ from torchvision import datasets, transforms
 from models.base import BaseLearner
 from classifier.classifier_builder import ClassifierReconstructor
 from compensator.distribution_compensator import DistributionCompensator
+from models.distillator import Distiller
 from utils.inc_net import BaseNet
 from lora import compute_covariances
 import math
@@ -104,9 +105,20 @@ class SubspaceLoRA(BaseLearner):
         self.covariances: Dict[str, torch.Tensor] | None = None
         self.drift_compensator = DistributionCompensator(auxiliary_data_size=args["auxiliary_data_size"])
         self.classifier_reconstructor = ClassifierReconstructor(device=self._device)
+        
+        self.distillator = Distiller(
+            kd_type=kd_type,
+            gamma_kd=args["gamma_kd"],
+            update_teacher_each_task=args["update_teacher_each_task"],
+            device=self._device,
+            feat_dim=self.network.vit.feature_dim,
+            transform=args["distillation_transform"])
+        
+        self.get_aux_loader(self.args)
+        self.drift_compensator.set_auxiliary_loader(self.aux_loader)
 
-        self.teacher_network = None   # 用于 KD
-        self.prev_network = None      # 用于漂移补偿（上一个任务结束后的模型）
+        self.teacher_network = None
+        self.prev_network = None
         self.seed: int = args["seed"]
         self.task_count: int = 0
         self.current_task_id = 0
@@ -160,9 +172,10 @@ class SubspaceLoRA(BaseLearner):
         task_id = self.current_task_id
         task_size = data_manager.get_task_size(task_id)
 
-        if self.use_feature_kd:
-            if self.distill_head is None:
-                self.initialize_distillation_head()
+        self.distillator.update_teacher(self.network)
+
+        self.prev_network = copy.deepcopy(self.network).cpu()
+        self.prev_network.vit.finalize_without_lora()
 
         self._total_classes = self._known_classes + task_size
         self.current_task_id += 1
@@ -183,6 +196,7 @@ class SubspaceLoRA(BaseLearner):
         dataset_size = len(train_set_test_mode)
         max_samples = getattr(self, 'max_train_test_samples', 5000)
         sampler = None
+
         if dataset_size > max_samples:
             indices = torch.randperm(dataset_size)[:max_samples].tolist()
             sampler = SubsetRandomSampler(indices)
@@ -197,23 +211,7 @@ class SubspaceLoRA(BaseLearner):
             pin_memory=True,
             persistent_workers=True)
 
-        if self.use_feature_kd:
-            if self.teacher_network is None:
-                self.teacher_network = copy.deepcopy(self.network).to(self._device)
-                self.teacher_network.vit.finalize_without_lora()
-            
-            elif self.update_teacher_each_task:
-                self.teacher_network = copy.deepcopy(self.network).to(self._device)
-                self.teacher_network.vit.finalize_without_lora()
-                self.initialize_distillation_head()
-
-        if self.compensate:
-            self.prev_network = copy.deepcopy(self.network).cpu()
-            self.prev_network.vit.finalize_without_lora()
-
         # === 初始化 DriftCompensator 所需的 loader，但不用于 KD ===
-        self.get_aux_loader(self.args)
-        self.drift_compensator.initialize_aux_loader(self.aux_trainset)
         self.network.update_fc(task_size)
         self.network.fc.to(self._device)
 
