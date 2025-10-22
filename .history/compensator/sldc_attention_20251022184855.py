@@ -7,7 +7,7 @@ import torch.nn.functional as F
 class AttentionCompensator(BaseCompensator):
     """基于样本间距的语义漂移补偿器 (SDC)"""
     def __init__(self, input_dim: int, device="cuda", 
-                 compensate_cov: bool = True):
+                 compensate_cov: bool = False):
         super().__init__(input_dim, device)
         self.compensate_cov = compensate_cov  # 控制是否补偿协方差
         self.drift_vectors = None

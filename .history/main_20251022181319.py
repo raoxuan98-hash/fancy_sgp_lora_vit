@@ -1,10 +1,5 @@
-import os 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
-
-
 import argparse
 from trainer import train
-
 def set_smart_defaults(ns):
     if not ns.smart_defaults:
         return ns
@@ -55,14 +50,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     train_grp = parser.add_argument_group('training', 'Optimisation & schedule')  
     train_grp.add_argument('--seed_list', nargs='+', type=int, default=[1993], help='Random seeds for multiple runs.')
-    train_grp.add_argument('--iterations', type=int, default=10, help='Training iterations per task.')
+    train_grp.add_argument('--iterations', type=int, default=1500, help='Training iterations per task.')
     train_grp.add_argument('--warmup_ratio', type=int, default=0.1, help='Warm‑up ratio for learning rate schedule.')
     train_grp.add_argument('--ca_epochs', type=int, default=5, help='Classifier alignment epochs.')
     train_grp.add_argument('--optimizer', type=str, default='adamw', help='Optimizer name (adamw / sgd).')
     train_grp.add_argument('--lrate', type=float, default=1e-4, help='Learning rate.')
     train_grp.add_argument('--batch_size', type=int, default=16, help='Batch size.')
     train_grp.add_argument('--evaluate_final_only', action=argparse.BooleanOptionalAction, default=True)
-    train_grp.add_argument('--gamma_kd', type=float, default=0.0, help='Knowledge‑distillation weight.')
+    train_grp.add_argument('--gamma_kd', type=float, default=0.5, help='Knowledge‑distillation weight.')
     train_grp.add_argument('--update_teacher_each_task', type=bool, default=True, help='If set, update the teacher network after each task.')
     train_grp.add_argument('--use_aux_for_kd', action='store_true', default=False, help='If set, use auxiliary data for KD.')
     train_grp.add_argument('--kd_type', type=str, default='feat', help='KD type (feat / logit).')
@@ -90,6 +85,9 @@ def build_parser() -> argparse.ArgumentParser:
 # In[]
 if __name__ == '__main__':
     
+    import os 
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+
     parser = build_parser()
     args = parser.parse_args()
     args = set_smart_defaults(args)

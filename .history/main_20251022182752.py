@@ -1,5 +1,5 @@
-import os 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+    import os 
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 
 import argparse
@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     train_grp = parser.add_argument_group('training', 'Optimisation & schedule')  
     train_grp.add_argument('--seed_list', nargs='+', type=int, default=[1993], help='Random seeds for multiple runs.')
-    train_grp.add_argument('--iterations', type=int, default=10, help='Training iterations per task.')
+    train_grp.add_argument('--iterations', type=int, default=1500, help='Training iterations per task.')
     train_grp.add_argument('--warmup_ratio', type=int, default=0.1, help='Warm‑up ratio for learning rate schedule.')
     train_grp.add_argument('--ca_epochs', type=int, default=5, help='Classifier alignment epochs.')
     train_grp.add_argument('--optimizer', type=str, default='adamw', help='Optimizer name (adamw / sgd).')

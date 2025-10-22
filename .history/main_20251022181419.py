@@ -1,10 +1,5 @@
-import os 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
-
-
 import argparse
 from trainer import train
-
 def set_smart_defaults(ns):
     if not ns.smart_defaults:
         return ns
@@ -55,7 +50,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     train_grp = parser.add_argument_group('training', 'Optimisation & schedule')  
     train_grp.add_argument('--seed_list', nargs='+', type=int, default=[1993], help='Random seeds for multiple runs.')
-    train_grp.add_argument('--iterations', type=int, default=10, help='Training iterations per task.')
+    train_grp.add_argument('--iterations', type=int, default=1500, help='Training iterations per task.')
     train_grp.add_argument('--warmup_ratio', type=int, default=0.1, help='Warm‑up ratio for learning rate schedule.')
     train_grp.add_argument('--ca_epochs', type=int, default=5, help='Classifier alignment epochs.')
     train_grp.add_argument('--optimizer', type=str, default='adamw', help='Optimizer name (adamw / sgd).')
@@ -70,7 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_grp.add_argument('--eval_only', type=bool, default=False)
 
     model.add_argument('--lora_rank', type=int, default=4, help='LoRA rank.')
-    model.add_argument('--lora_type', type=str, default="basic_lora", choices=['basic_lora', 'sgp_lora', 'nsp_lora', 'full'], help='Type of LoRA adaptor.')
+    model.add_argument('--lora_type', type=str, default="sgp_lora", choices=['basic_lora', 'sgp_lora', 'nsp_lora', 'full'], help='Type of LoRA adaptor.')
     model.add_argument('--weight_temp', type=float, default=1.0, help='Projection temperature.')
     model.add_argument('--weight_kind', type=str, default='log1p', choices=["exp", "log1p", "rational1", "rational2", "sqrt_rational2", "power_family", "stretched_exp"])
     model.add_argument('--weight_p', type=float, default=1.0, help='Weight p.')
@@ -90,6 +85,9 @@ def build_parser() -> argparse.ArgumentParser:
 # In[]
 if __name__ == '__main__':
     
+    import os 
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+
     parser = build_parser()
     args = parser.parse_args()
     args = set_smart_defaults(args)
