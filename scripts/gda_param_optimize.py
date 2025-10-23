@@ -27,10 +27,10 @@ import logging
 import os
 import sys
 from pathlib import Path
-from statistics import mean
 from typing import Dict, Mapping, Tuple
 
 import optuna
+import torch
 
 from classifier.da_classifier_builder import LDAClassifierBuilder, QDAClassifierBuilder
 from trainer import build_log_dirs, train_single_run
@@ -91,16 +91,40 @@ def _configure_logging(log_dir: str) -> None:
     )
 
 
-def _evaluate_variants(model, variants: Mapping[str, Dict], build_classifier) -> Dict[str, float]:
-    metrics: Dict[str, float] = {}
+def _select_reference_stats(variants: Mapping[str, Dict]) -> Tuple[str, Dict]:
     for variant, stats in variants.items():
-        if not stats:
-            logging.warning("Variant %s has empty statistics. Skipping.", variant)
-            continue
-        classifier = build_classifier(stats)
-        result = model.evaluate(model.test_loader, {variant: classifier})
-        metrics[variant] = float(result[variant])
-    return metrics
+        if stats:
+            return variant, stats
+    raise RuntimeError("No valid Gaussian statistics found in variants.")
+
+
+def _collect_test_features(model) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Extract backbone features and labels for the full test loader once."""
+
+    model.network.eval()
+    features = []
+    targets = []
+    device = model._device  # pylint: disable=protected-access
+
+    with torch.no_grad():
+        for inputs, labels in model.test_loader:
+            inputs = inputs.to(device)
+            feats = model.network.forward_features(inputs).cpu()
+            features.append(feats)
+            targets.append(labels.cpu())
+
+    return torch.cat(features, dim=0), torch.cat(targets, dim=0)
+
+
+def _evaluate_classifier(classifier, features: torch.Tensor, targets: torch.Tensor) -> float:
+    """Compute accuracy (%) of a classifier on precomputed features."""
+
+    with torch.no_grad():
+        logits = classifier(features)
+        preds = logits.argmax(dim=1).cpu()
+
+    accuracy = (preds == targets).float().mean().item() * 100.0
+    return float(round(accuracy, 4))
 
 
 def _optimise_classifier(
@@ -159,6 +183,11 @@ def optimise_dataset(
 
     variants = model.drift_compensator.variants
     device = model._device  # pylint: disable=protected-access
+    selected_variant, reference_stats = _select_reference_stats(variants)
+    logging.info("Using %s statistics for optimisation.", selected_variant)
+    features_cpu, targets = _collect_test_features(model)
+    features_on_device = features_cpu.to(device)
+    del features_cpu
 
     dataset_dir = output_dir / dataset
     dataset_dir.mkdir(parents=True, exist_ok=True)
@@ -169,11 +198,11 @@ def optimise_dataset(
     def lda_objective(trial: optuna.Trial) -> float:
         reg_alpha = trial.suggest_float("reg_alpha", lda_range[0], lda_range[1])
         builder = LDAClassifierBuilder(reg_alpha=reg_alpha, device=device)
-        metrics = _evaluate_variants(model, variants, builder.build)
-        if not metrics:
-            raise optuna.exceptions.TrialPruned("No valid variants to evaluate.")
+        classifier = builder.build(reference_stats)
+        accuracy = _evaluate_classifier(classifier, features_on_device, targets)
+        metrics = {selected_variant: accuracy}
         trial.set_user_attr("metrics", metrics)
-        return mean(metrics.values())
+        return accuracy
 
     def qda_objective(trial: optuna.Trial) -> float:
         reg_alpha1 = trial.suggest_float("reg_alpha1", qda_alpha1_range[0], qda_alpha1_range[1])
@@ -183,11 +212,11 @@ def optimise_dataset(
             qda_reg_alpha2=reg_alpha2,
             device=device,
         )
-        metrics = _evaluate_variants(model, variants, builder.build)
-        if not metrics:
-            raise optuna.exceptions.TrialPruned("No valid variants to evaluate.")
+        classifier = builder.build(reference_stats)
+        accuracy = _evaluate_classifier(classifier, features_on_device, targets)
+        metrics = {selected_variant: accuracy}
         trial.set_user_attr("metrics", metrics)
-        return mean(metrics.values())
+        return accuracy
 
     _, lda_summary = _optimise_classifier("lda", lda_objective, n_trials, dataset_dir, seed)
     _, qda_summary = _optimise_classifier("qda", qda_objective, n_trials, dataset_dir, seed + 1)
@@ -196,6 +225,7 @@ def optimise_dataset(
         "dataset": dataset,
         "init_cls": init_cls,
         "seed": seed,
+        "reference_variant": selected_variant,
         "lda": lda_summary,
         "qda": qda_summary,
     }
