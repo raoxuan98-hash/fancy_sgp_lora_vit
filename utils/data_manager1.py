@@ -94,10 +94,27 @@ class IncrementalDataManager:
 
     def _build_task_schedule(self) -> List[int]:
         total = len(self._class_order)
+
+        # Special case: no incremental classes requested.
+        if self.increment_classes <= 0:
+            if self.initial_classes < total:
+                logging.warning(
+                    "[IDM] increment_classes=%d is non-positive; "
+                    "only the initial %d classes will be used out of %d.",
+                    self.increment_classes,
+                    self.initial_classes,
+                    total,
+                )
+            incs = [self.initial_classes if self.initial_classes > 0 else total]
+            logging.info("[IDM] increment_classess=%s (nb_tasks=%d)", incs, len(incs))
+            return incs
+
         incs = [self.initial_classes]
         remain = total - self.initial_classes
         while remain > 0:
             step = min(self.increment_classes, remain)
+            if step <= 0:
+                break
             incs.append(step)
             remain -= step
         logging.info("[IDM] increment_classess=%s (nb_tasks=%d)", incs, len(incs))

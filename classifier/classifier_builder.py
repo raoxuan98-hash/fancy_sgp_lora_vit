@@ -17,6 +17,7 @@ class ClassifierReconstructor:
     def __init__(self, device="cuda",  **kwargs):
         self.device = device
         self.kwargs = kwargs
+        self.cached_Z = None
 
         if 'lda_reg_alpha' in kwargs:
             self.lda_reg_alpha = kwargs['lda_reg_alpha']
@@ -65,10 +66,14 @@ class ClassifierReconstructor:
     def _get_classifier_builder(self, variants, classifier_type):
         """根据分类器类型获取对应的构建器"""
         if classifier_type == "lda":
-            return LDAClassifierBuilder(reg_alpha=0.2, device="cuda")
-        
+            return LDAClassifierBuilder(reg_alpha=self.lda_reg_alpha, device=self.device)
+
         elif classifier_type == "qda":
-            return QDAClassifierBuilder(qda_reg_alpha1=0.4, qda_reg_alpha2=0.4, device="cuda")
+            return QDAClassifierBuilder(
+                qda_reg_alpha1=self.qda_reg_alpha1,
+                qda_reg_alpha2=self.qda_reg_alpha2,
+                device=self.device,
+            )
 
         elif classifier_type == "sgd":
             if self.cached_Z is None:
