@@ -4,6 +4,7 @@ import logging
 import torch
 import random
 import numpy as np
+from collections.abc import Mapping, Sequence
 # from models.subspace_lora import SubspaceLoRA
 from models.subspace_lora import SubspaceLoRA
 from utils.data_manager import DataManager
@@ -31,7 +32,7 @@ def train(args):
     aggregate_seed_results(all_results)
     return all_results
 
-def train_single_run(args):
+def train_single_run(args, return_model: bool = False):
     # Setting random seed and device for reproducibility
     set_random(args['seed'])
     print_args(args)
@@ -48,6 +49,8 @@ def train_single_run(args):
     logging.info(f'All params: {count_parameters(model.network)}')
     logging.info(f'Trainable params: {count_parameters(model.network, True)}')
     final_results = model.loop(data_manager)
+    if return_model:
+        return final_results, model
     return final_results
 
 
@@ -268,13 +271,22 @@ def build_log_dirs(args: dict, root_dir="."):
 
     
 def aggregate_seed_results(seed_results):
-    if not seed_results:
+    """Aggregate evaluation statistics from multiple random seeds."""
+
+    if isinstance(seed_results, Mapping):
+        records = list(seed_results.values())
+    elif isinstance(seed_results, Sequence) and not isinstance(seed_results, (str, bytes)):
+        records = list(seed_results)
+    else:
+        records = [seed_results]
+
+    if not records:
         logging.warning("⚠️ No seed results provided for aggregation.")
         return {"final_task": {}, "average_across_tasks": {}}
 
     # Collect all variant names across all seeds
     all_variants = set()
-    for res in seed_results:
+    for res in records:
         all_variants.update(res.get("last_task_accuracies", {}).keys())
         all_variants.update(res.get("average_accuracies", {}).keys())
     all_variants = sorted(all_variants)
@@ -284,7 +296,7 @@ def aggregate_seed_results(seed_results):
     avg_task_values = {variant: [] for variant in all_variants}
 
     # Populate with data from each seed
-    for res in seed_results:
+    for res in records:
         last_acc = res.get("last_task_accuracies", {})
         avg_acc = res.get("average_accuracies", {})
 
