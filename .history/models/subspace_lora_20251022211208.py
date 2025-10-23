@@ -71,6 +71,9 @@ class SubspaceLoRA(BaseLearner):
         self.lrate: float = args["lrate"]
         self.weight_decay: float = args["weight_decay"]
         self.optimizer_type: str = args["optimizer"]
+
+        self.distill_head = None
+
         kd_type = args["kd_type"]
 
         self.use_kd: bool = args["gamma_kd"] > 0.0
@@ -227,7 +230,7 @@ class SubspaceLoRA(BaseLearner):
         fc_params: List[torch.nn.Parameter]) -> optim.Optimizer:
 
         """Create optimizer according to ``self.optimizer_type``."""
-        distill_params = filter(lambda p: p.requires_grad, self.distillator.parameters())
+        distill_params = list(self.dis.parameters()) if self.distill_head is not None else []
 
         param_groups = [
             {"params": lora_params, "lr": self.lrate, "weight_decay": self.weight_decay},

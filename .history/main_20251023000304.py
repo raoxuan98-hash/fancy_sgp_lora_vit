@@ -62,7 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_grp.add_argument('--lrate', type=float, default=1e-4, help='Learning rate.')
     train_grp.add_argument('--batch_size', type=int, default=16, help='Batch size.')
     train_grp.add_argument('--evaluate_final_only', action=argparse.BooleanOptionalAction, default=True)
-    train_grp.add_argument('--gamma_kd', type=float, default=0.0, help='Knowledge‑distillation weight.')
+    train_grp.add_argument('--gamma_kd', type=float, default=1.0, help='Knowledge‑distillation weight.')
     train_grp.add_argument('--update_teacher_each_task', type=bool, default=False, help='If set, update the teacher network after each task.')
     train_grp.add_argument('--use_aux_for_kd', action='store_true', default=False, help='If set, use auxiliary data for KD.')
     train_grp.add_argument('--kd_type', type=str, default='feat', help='KD type (feat / logit).')

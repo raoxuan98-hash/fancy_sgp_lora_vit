@@ -71,6 +71,9 @@ class SubspaceLoRA(BaseLearner):
         self.lrate: float = args["lrate"]
         self.weight_decay: float = args["weight_decay"]
         self.optimizer_type: str = args["optimizer"]
+
+        self.distill_head = None
+
         kd_type = args["kd_type"]
 
         self.use_kd: bool = args["gamma_kd"] > 0.0

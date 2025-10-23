@@ -71,6 +71,9 @@ class SubspaceLoRA(BaseLearner):
         self.lrate: float = args["lrate"]
         self.weight_decay: float = args["weight_decay"]
         self.optimizer_type: str = args["optimizer"]
+
+        self.distill_head = None
+
         kd_type = args["kd_type"]
 
         self.use_kd: bool = args["gamma_kd"] > 0.0
@@ -227,7 +230,7 @@ class SubspaceLoRA(BaseLearner):
         fc_params: List[torch.nn.Parameter]) -> optim.Optimizer:
 
         """Create optimizer according to ``self.optimizer_type``."""
-        distill_params = filter(lambda p: p.requires_grad, self.distillator.parameters())
+        distill_params = list(self.distill_head.parameters()) if self.distill_head is not None else []
 
         param_groups = [
             {"params": lora_params, "lr": self.lrate, "weight_decay": self.weight_decay},
@@ -508,7 +511,15 @@ class SubspaceLoRA(BaseLearner):
         # 分类头参数
         fc_count = sum(p.numel() for p in self.network.fc.parameters())
         param_counts["classifier"] = fc_count
-        total_count = lora_count + fc_count
+        
+        # 蒸馏头参数
+        distill_count = 0
+        if self.distill_head is not None:
+            distill_count = sum(p.numel() for p in self.dis.parameters())
+        param_counts["distill_head"] = distill_count
+        
+        # 总参数
+        total_count = lora_count + fc_count + distill_count
         param_counts["total"] = total_count
         
         return param_counts
@@ -527,6 +538,7 @@ class SubspaceLoRA(BaseLearner):
         logging.info(f"可训练参数: {trainable_params['total']:,}")
         logging.info(f"  - LoRA参数: {trainable_params['lora']:,}")
         logging.info(f"  - 分类头参数: {trainable_params['classifier']:,}")
+        logging.info(f"  - 蒸馏头参数: {trainable_params['distill_head']:,}")
         
         # 计算参数效率
         efficiency = (trainable_params['total'] / total_params) * 100

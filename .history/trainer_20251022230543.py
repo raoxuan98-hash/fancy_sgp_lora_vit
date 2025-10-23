@@ -228,19 +228,13 @@ def build_log_dirs(args: dict, root_dir="."):
 
     # 四级参数：包含 use_aux_for_kd
     other_parts = []
-    if args['gamma_kd'] > 0.0:
-        for k in ['kd_type', 'gamma_kd', 'distillation_transform', 'update_teacher_each_task']:
-            if k in args:
-                if k == 'update_teacher_each_task':
-                    key = 'utt'
-                elif k == 'distillation_transform':
-                    key = 'dt'
-                else:
-                    key = k
-                other_parts.append(f"{key}-{args[k]}")
-            
-            if k == "kd_type" and args['use_aux_for_kd'] == True and args['gamma_kd'] > 0.0:
-                other_parts.append("_aux_kd")
+    i
+    for k in ['kd_type', 'gamma_kd', 'distillation_transform']:
+        if k in args:
+            other_parts.append(f"{k}-{args[k]}")
+        
+        if k == "kd_type" and args['use_aux_for_kd'] == True and args['gamma_kd'] > 0.0:
+            other_parts.append("_aux_kd")
 
     other_dir = lora_dir
     if other_parts:

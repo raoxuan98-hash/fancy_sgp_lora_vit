@@ -237,7 +237,7 @@ def build_log_dirs(args: dict, root_dir="."):
                     key = 'dt'
                 else:
                     key = k
-                other_parts.append(f"{key}-{args[k]}")
+                other_parts.append(f"{k}-{args[k]}")
             
             if k == "kd_type" and args['use_aux_for_kd'] == True and args['gamma_kd'] > 0.0:
                 other_parts.append("_aux_kd")

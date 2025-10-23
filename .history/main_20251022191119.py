@@ -1,5 +1,5 @@
 # import os 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 
 import argparse
@@ -11,11 +11,11 @@ def set_smart_defaults(ns):
     if ns.dataset == 'cars196_224':
         ns.init_cls, ns.increment, ns.iterations = 20, 20, 1500
     elif ns.dataset == 'imagenet-r':
-        ns.init_cls, ns.increment, ns.iterations = 20, 20, 2000
+        ns.init_cls, ns.increment, ns.iterations = 5, 5, 2000
     elif ns.dataset == 'cifar100_224':
-        ns.init_cls, ns.increment, ns.iterations = 10, 10, 2000
+        ns.init_cls, ns.increment, ns.iterations = 2, 3, 2000
     elif ns.dataset == 'cub200_224':
-        ns.init_cls, ns.increment, ns.iterations = 20, 20, 1500
+        ns.init_cls, ns.increment, ns.iterations = 5, 5, 1500
 
     if ns.lora_type == 'full':
         ns.lrate = 1e-3
@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     basic = parser.add_argument_group('basic', 'General / high‑level options')
     basic.add_argument('--dataset', type=str, default='imagenet-r', choices=['imagenet-r', 'cifar100_224', 'cub200_224', 'cars196_224', 'caltech101_224', 'oxfordpet37_224', 'food101_224', 'resisc45_224'], help='Dataset to use')
     basic.add_argument('--smart_defaults', action='store_true', default=False, help='If set, overwrite a few hyper‑parameters according to the dataset.')
-    basic.add_argument('--user', type=str, default='acl-dc-蒸馏方案对比', choices=['authors'], help='User identifier (currently unused).')
+    basic.add_argument('--user', type=str, default='sgp_lora', choices=['authors'], help='User identifier (currently unused).')
     basic.add_argument('--test', action='store_true', default=True, help='If set, run a quick test with reduced settings.')
 
     mem = parser.add_argument_group('memory', 'Memory / replay buffer')
@@ -55,23 +55,23 @@ def build_parser() -> argparse.ArgumentParser:
 
     train_grp = parser.add_argument_group('training', 'Optimisation & schedule')  
     train_grp.add_argument('--seed_list', nargs='+', type=int, default=[1993], help='Random seeds for multiple runs.')
-    train_grp.add_argument('--iterations', type=int, default=2000, help='Training iterations per task.')
+    train_grp.add_argument('--iterations', type=int, default=10, help='Training iterations per task.')
     train_grp.add_argument('--warmup_ratio', type=int, default=0.1, help='Warm‑up ratio for learning rate schedule.')
     train_grp.add_argument('--ca_epochs', type=int, default=5, help='Classifier alignment epochs.')
     train_grp.add_argument('--optimizer', type=str, default='adamw', help='Optimizer name (adamw / sgd).')
     train_grp.add_argument('--lrate', type=float, default=1e-4, help='Learning rate.')
     train_grp.add_argument('--batch_size', type=int, default=16, help='Batch size.')
     train_grp.add_argument('--evaluate_final_only', action=argparse.BooleanOptionalAction, default=True)
-    train_grp.add_argument('--gamma_kd', type=float, default=0.0, help='Knowledge‑distillation weight.')
-    train_grp.add_argument('--update_teacher_each_task', type=bool, default=False, help='If set, update the teacher network after each task.')
+    train_grp.add_argument('--gamma_kd', type=float, default=1.0, help='Knowledge‑distillation weight.')
+    train_grp.add_argument('--update_teacher_each_task', type=bool, default=True, help='If set, update the teacher network after each task.')
     train_grp.add_argument('--use_aux_for_kd', action='store_true', default=False, help='If set, use auxiliary data for KD.')
     train_grp.add_argument('--kd_type', type=str, default='feat', help='KD type (feat / logit).')
     train_grp.add_argument('--distillation_transform', type=str, default='linear', help='Distillation head transform (identity / linear / weaknonlinear).')
     train_grp.add_argument('--eval_only', type=bool, default=False)
 
     model.add_argument('--lora_rank', type=int, default=4, help='LoRA rank.')
-    model.add_argument('--lora_type', type=str, default="sgp_lora", choices=['basic_lora', 'sgp_lora', 'nsp_lora', 'full'], help='Type of LoRA adaptor.')
-    model.add_argument('--weight_temp', type=float, default=2.0, help='Projection temperature.')
+    model.add_argument('--lora_type', type=str, default="basic_lora", choices=['basic_lora', 'sgp_lora', 'nsp_lora', 'full'], help='Type of LoRA adaptor.')
+    model.add_argument('--weight_temp', type=float, default=1.0, help='Projection temperature.')
     model.add_argument('--weight_kind', type=str, default='log1p', choices=["exp", "log1p", "rational1", "rational2", "sqrt_rational2", "power_family", "stretched_exp"])
     model.add_argument('--weight_p', type=float, default=1.0, help='Weight p.')
     model.add_argument('--nsp_eps', type=float, default=0.05, choices=[0.05, 0.10])

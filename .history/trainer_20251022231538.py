@@ -232,12 +232,8 @@ def build_log_dirs(args: dict, root_dir="."):
         for k in ['kd_type', 'gamma_kd', 'distillation_transform', 'update_teacher_each_task']:
             if k in args:
                 if k == 'update_teacher_each_task':
-                    key = 'utt'
-                elif k == 'distillation_transform':
-                    key = 'dt'
-                else:
-                    key = k
-                other_parts.append(f"{key}-{args[k]}")
+                    key = 
+                other_parts.append(f"{k}-{args[k]}")
             
             if k == "kd_type" and args['use_aux_for_kd'] == True and args['gamma_kd'] > 0.0:
                 other_parts.append("_aux_kd")
