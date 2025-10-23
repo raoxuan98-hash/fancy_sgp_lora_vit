@@ -1,5 +1,5 @@
-import os 
-os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+# import os 
+# os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
 
 import argparse
@@ -45,8 +45,8 @@ def build_parser() -> argparse.ArgumentParser:
     mem.add_argument('--shuffle', action='store_true', default=True, help='Shuffle replay buffer before each epoch.')
 
     cls = parser.add_argument_group('class', 'Class increment settings')
-    cls.add_argument('--init_cls', type=int, default=100, help='Number of classes in the first task.')
-    cls.add_argument('--increment', type=int, default=0, help='Number of new classes added per task.')
+    cls.add_argument('--init_cls', type=int, default=20, help='Number of classes in the first task.')
+    cls.add_argument('--increment', type=int, default=20, help='Number of new classes added per task.')
 
     model = parser.add_argument_group('model', 'Backbone & LoRA settings')
     model.add_argument('--model_name', type=str, default='sldc', help='Model identifier.')
@@ -76,11 +76,6 @@ def build_parser() -> argparse.ArgumentParser:
     model.add_argument('--weight_p', type=float, default=1.0, help='Weight p.')
     model.add_argument('--nsp_eps', type=float, default=0.05, choices=[0.05, 0.10])
     model.add_argument('--nsp_weight', type=float, default=0.0, choices=[0.0, 0.02, 0.05])
-
-    gda = parser.add_argument_group('gda', 'Gaussian discriminate analysis settings')
-    gda.add_argument('--lda_reg_alpha', type=float, default=0.2, help='LDA regularisation alpha.')
-    gda.add_argument('--qda_reg_alpha1', type=float, default=0.25, help='QDA regularisation alpha 1.')
-    gda.add_argument('--qda_reg_alpha2', type=float, default=0.25, help='QDA regularisation alpha 2.')
     
     aux = parser.add_argument_group('auxiliary', 'External / auxiliary dataset')
     aux.add_argument('--auxiliary_data_path', type=str, default='/data1/open_datasets', help='Root path of the auxiliary dataset.')

@@ -77,10 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
     model.add_argument('--nsp_eps', type=float, default=0.05, choices=[0.05, 0.10])
     model.add_argument('--nsp_weight', type=float, default=0.0, choices=[0.0, 0.02, 0.05])
 
-    gda = parser.add_argument_group('gda', 'Gaussian discriminate analysis settings')
-    gda.add_argument('--lda_reg_alpha', type=float, default=0.2, help='LDA regularisation alpha.')
-    gda.add_argument('--qda_reg_alpha1', type=float, default=0.25, help='QDA regularisation alpha 1.')
-    gda.add_argument('--qda_reg_alpha2', type=float, default=0.25, help='QDA regularisation alpha 2.')
+    lda
     
     aux = parser.add_argument_group('auxiliary', 'External / auxiliary dataset')
     aux.add_argument('--auxiliary_data_path', type=str, default='/data1/open_datasets', help='Root path of the auxiliary dataset.')

@@ -16,6 +16,7 @@ class ClassifierReconstructor:
     """
     def __init__(self, device="cuda",  **kwargs):
         self.device = device
+        self.cached_Z = cached_Z
         self.kwargs = kwargs
 
         if 'lda_reg_alpha' in kwargs:

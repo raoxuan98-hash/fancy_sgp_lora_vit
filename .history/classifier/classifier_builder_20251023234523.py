@@ -14,8 +14,9 @@ class ClassifierReconstructor:
     统一的分类器重构模块：
     输入各 variant 的高斯统计，输出 {variant_name: {classifier_type: nn.Module}}
     """
-    def __init__(self, device="cuda",  **kwargs):
+    def __init__(self, device="cuda", cached_Z=None, **kwargs):
         self.device = device
+        self.cached_Z = cached_Z
         self.kwargs = kwargs
 
         if 'lda_reg_alpha' in kwargs:

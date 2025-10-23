@@ -85,11 +85,7 @@ class SubspaceLoRA(BaseLearner):
         self.covariances: Dict[str, torch.Tensor] | None = None
         self.drift_compensator = DistributionCompensator(auxiliary_data_size=args["auxiliary_data_size"])
         self.classifier_reconstructor = ClassifierReconstructor(
-            device=self._device,
-            lda_reg_alpha=args['lda_reg_alpha'],
-            qda_reg_alpha1=args['qda_reg_alpha1'],
-            qda_reg_alpha2=args['qda_reg_alpha2']
-        )
+            device=self._device, )
         
         self.distillator = Distiller(
             kd_type=kd_type,

@@ -14,8 +14,9 @@ class ClassifierReconstructor:
     统一的分类器重构模块：
     输入各 variant 的高斯统计，输出 {variant_name: {classifier_type: nn.Module}}
     """
-    def __init__(self, device="cuda",  **kwargs):
+    def __init__(self, device="cuda", cached_Z=None, **kwargs):
         self.device = device
+        self.cached_Z = cached_Z
         self.kwargs = kwargs
 
         if 'lda_reg_alpha' in kwargs:
@@ -29,7 +30,7 @@ class ClassifierReconstructor:
             logging.info(f"[ClassifierReconstructor] QDA regularization alphas set to {self.qda_reg_alpha1}, {self.qda_reg_alpha2}")
         else:
             self.qda_reg_alpha1 = 0.25
-            self.qda_reg_alpha2 = 0.25
+            self.qda_reg_alpha2 = 0.4
 
     def build_classifiers(self, variants: Dict[str, Dict[int, object]], classifier_type: Union[str, List[str]] = ["lda", "qda"]) -> Dict[str, Dict[str, nn.Module]]:
         """

@@ -14,22 +14,9 @@ class ClassifierReconstructor:
     统一的分类器重构模块：
     输入各 variant 的高斯统计，输出 {variant_name: {classifier_type: nn.Module}}
     """
-    def __init__(self, device="cuda",  **kwargs):
+    def __init__(self, device="cuda", cached_Z=None):
         self.device = device
-        self.kwargs = kwargs
-
-        if 'lda_reg_alpha' in kwargs:
-            self.lda_reg_alpha = kwargs['lda_reg_alpha']
-            logging.info(f"[ClassifierReconstructor] LDA regularization alpha set to {self.lda_reg_alpha}")
-        else:
-            self.lda_reg_alpha = 0.4
-        if 'qda_reg_alpha1' in kwargs and 'qda_reg_alpha2' in kwargs:
-            self.qda_reg_alpha1 = kwargs['qda_reg_alpha1']
-            self.qda_reg_alpha2 = kwargs['qda_reg_alpha2']
-            logging.info(f"[ClassifierReconstructor] QDA regularization alphas set to {self.qda_reg_alpha1}, {self.qda_reg_alpha2}")
-        else:
-            self.qda_reg_alpha1 = 0.25
-            self.qda_reg_alpha2 = 0.25
+        self.cached_Z = cached_Z
 
     def build_classifiers(self, variants: Dict[str, Dict[int, object]], classifier_type: Union[str, List[str]] = ["lda", "qda"]) -> Dict[str, Dict[str, nn.Module]]:
         """
@@ -65,10 +52,10 @@ class ClassifierReconstructor:
     def _get_classifier_builder(self, variants, classifier_type):
         """根据分类器类型获取对应的构建器"""
         if classifier_type == "lda":
-            return LDAClassifierBuilder(reg_alpha=0.2, device="cuda")
+            return LDAClassifierBuilder(reg_alpha=0.5, device="cuda")
         
         elif classifier_type == "qda":
-            return QDAClassifierBuilder(qda_reg_alpha1=0.4, qda_reg_alpha2=0.4, device="cuda")
+            return QDAClassifierBuilder(qda_reg_alpha1=0.2, qda_reg_alpha2=0.3, device="cuda")
 
         elif classifier_type == "sgd":
             if self.cached_Z is None:
