@@ -311,6 +311,13 @@ def aggregate_seed_results(seed_results):
     final_task_stats = {}
     avg_task_stats = {}
 
+    if not all_variants:
+        logging.warning("⚠️ No accuracy statistics found in seed results.")
+        return {
+            "final_task": final_task_stats,
+            "average_across_tasks": avg_task_stats,
+        }
+
     for variant in all_variants:
         f_vals = np.array(final_task_values[variant])
         a_vals = np.array(avg_task_values[variant])
@@ -333,4 +340,5 @@ def aggregate_seed_results(seed_results):
     # Return structured stats
     return {
         "final_task": final_task_stats,
-        "average_across_tasks": avg_task_stats}
+        "average_across_tasks": avg_task_stats,
+    }

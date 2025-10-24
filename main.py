@@ -27,8 +27,30 @@ def set_smart_defaults(ns):
 
     return ns
 
+def _pretty_print_aggregate(aggregate_results: dict) -> None:
+    """Print aggregated statistics across random seeds in a readable format."""
+    if not aggregate_results:
+        return
+
+    final_task = aggregate_results.get('final_task', {})
+    average_across = aggregate_results.get('average_across_tasks', {})
+
+    if final_task:
+        print('\n===== Aggregated Final Task Accuracy =====')
+        for variant, (mean, std) in final_task.items():
+            print(f"{variant:<20} : {mean:.2f}% ± {std:.2f}%")
+
+    if average_across:
+        print('\n===== Aggregated Average Accuracy Across Tasks =====')
+        for variant, (mean, std) in average_across.items():
+            print(f"{variant:<20} : {mean:.2f}% ± {std:.2f}%")
+
+
 def main(args):
-    train(args)
+    results = train(args)
+    aggregate = results.get('aggregate') if isinstance(results, dict) else None
+    if aggregate:
+        _pretty_print_aggregate(aggregate)
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()

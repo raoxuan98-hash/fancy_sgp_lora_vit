@@ -397,16 +397,24 @@ class SubspaceLoRA(BaseLearner):
                     self.covariances[k] = 0.9 * self.covariances[k] + new_covs[k] + 1e-7 * torch.eye(self.covariances[k].size(0)).to(self.covariances[k].device)
             self.network.update_projection_matrices(self.covariances)
 
-    def loop(self, data_manager) -> Dict[str, List[float | None]]:
+    def loop(self, data_manager) -> Dict[str, Any]:
         self.data_manager = data_manager
+        final_analysis: Dict[str, Any] | None = None
+
         for _ in range(data_manager.nb_tasks):
             self.incremental_train(data_manager)
             self.refine_classifiers()
             logging.info(f"Evaluating after task {self.current_task_id}...")
             self.eval_task()
-            self.analyze_task_results(self.all_task_results)
+            final_analysis = self.analyze_task_results(self.all_task_results)
             self.after_task()
-        return self.all_task_results
+
+        if final_analysis is None:
+            final_analysis = self.analyze_task_results(self.all_task_results)
+
+        combined_results: Dict[str, Any] = dict(final_analysis)
+        combined_results["per_task_results"] = dict(self.all_task_results)
+        return combined_results
 
     def analyze_task_results(self, all_task_results: Dict[int, Dict[str, float]]) -> Dict[str, Any]:
         """
