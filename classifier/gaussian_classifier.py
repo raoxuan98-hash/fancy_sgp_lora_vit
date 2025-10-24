@@ -24,23 +24,25 @@ class LinearLDAClassifier(nn.Module):
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         super().__init__()
-        self.device = torch.device(device)
+        init_device = torch.device(device)
+        self.register_buffer("_device_indicator", torch.empty(0, device=init_device), persistent=False)
         self.lda_reg_alpha = lda_reg_alpha
 
         # === Step 1. 全局协方差 ===
         class_ids = sorted(stats_dict.keys())
         self.num_classes = len(class_ids)
-        means = torch.stack([stats_dict[cid].mean for cid in class_ids]).to(self.device)
-        covs = torch.stack([stats_dict[cid].cov for cid in class_ids]).to(self.device)
+        device = self.device
+        means = torch.stack([stats_dict[cid].mean for cid in class_ids]).to(device)
+        covs = torch.stack([stats_dict[cid].cov for cid in class_ids]).to(device)
         global_cov = covs.mean(0)
         global_cov = 0.5 * (global_cov + global_cov.T)
 
         # === Step 2. spherical 正则 ===
         d = global_cov.size(0)
-        cov_reg = (1.0 - self.lda_reg_alpha) * global_cov + self.lda_reg_alpha * torch.eye(d, device=self.device)
+        cov_reg = (1.0 - self.lda_reg_alpha) * global_cov + self.lda_reg_alpha * torch.eye(d, device=device)
 
         # === Step 3. 计算逆矩阵 ===
-        cov_reg = cov_reg + 1e-6 * torch.eye(d, device=self.device)
+        cov_reg = cov_reg + 1e-6 * torch.eye(d, device=device)
         cov_inv = torch.linalg.inv(cov_reg)
 
         # === Step 4. 权重 & 偏置解析解 ===
@@ -49,7 +51,7 @@ class LinearLDAClassifier(nn.Module):
         for i, cid in enumerate(class_ids):
             mu = means[i]
             w_c = cov_inv @ mu
-            logpi = torch.log(torch.tensor(priors[cid], device=self.device))
+            logpi = torch.log(torch.tensor(priors[cid], device=device))
             b_c = -0.5 * (mu @ cov_inv @ mu) + logpi
             W.append(w_c)
             b.append(b_c)
@@ -61,6 +63,10 @@ class LinearLDAClassifier(nn.Module):
         self.linear.weight.data = W.T.clone()
         self.linear.bias.data = b.clone()
         self.linear.requires_grad_(False)
+
+    @property
+    def device(self) -> torch.device:
+        return self._device_indicator.device
 
     def forward(self, x):
         return self.linear(x)
@@ -92,7 +98,8 @@ class RegularizedGaussianDA(nn.Module):
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         super().__init__()
-        self.device = torch.device(device)
+        init_device = torch.device(device)
+        self.register_buffer("_device_indicator", torch.empty(0, device=init_device), persistent=False)
         self.class_ids = sorted(stats_dict.keys())
         self.num_classes = len(self.class_ids)
         self.qda_reg_alpha1 = float(qda_reg_alpha1)
@@ -106,15 +113,16 @@ class RegularizedGaussianDA(nn.Module):
             priors_list = [1.0 / self.num_classes for _ in self.class_ids]
         else:
             priors_list = [class_priors[cid] for cid in self.class_ids]
-        self.log_priors = nn.Parameter(torch.log(torch.tensor(priors_list, device=self.device)), requires_grad=False)  # [C]
+        device = self.device
+        self.log_priors = nn.Parameter(torch.log(torch.tensor(priors_list, device=device)), requires_grad=False)  # [C]
 
         # 收集均值与协方差
         means = []
         covs = []
         for cid in self.class_ids:
             s = stats_dict[cid]
-            means.append(s.mean.float().to(self.device))
-            covs.append(s.cov.float().to(self.device))
+            means.append(s.mean.float().to(device))
+            covs.append(s.cov.float().to(device))
         means = torch.stack(means)   # [C, D]
         covs = torch.stack(covs)     # [C, D, D]
 
@@ -127,11 +135,11 @@ class RegularizedGaussianDA(nn.Module):
 
         # ---- QDA 正则：β·Σ_c + α1·Σ_global + α2·(tr(Σ_c)/d)·I ----
         C, D, _ = covs.shape
-        sph = torch.eye(D, device=self.device).unsqueeze(0)
+        sph = torch.eye(D, device=device).unsqueeze(0)
         a1, a2, a3 = self.qda_reg_alpha1, self.qda_reg_alpha2, self.qda_reg_alpha3
         covs_sym = 0.5 * (covs + covs.transpose(-1, -2))               # 数值对称化
         covs_reg = a1 * covs_sym + a2 * global_cov.unsqueeze(0) + a3 * sph
-        covs_reg = covs_reg + self.epsilon * torch.eye(D, device=self.device).unsqueeze(0)
+        covs_reg = covs_reg + self.epsilon * torch.eye(D, device=device).unsqueeze(0)
 
         # ---- 预计算每类逆阵与 logdet（Cholesky优先，失败回退SVD） ----
         cov_invs = []
@@ -162,13 +170,18 @@ class RegularizedGaussianDA(nn.Module):
             f"qda_reg_alpha3={self.qda_reg_alpha3}"
         )
 
+    @property
+    def device(self) -> torch.device:
+        return self._device_indicator.device
+
     # ================= 判别函数（向量化） =================
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         x: [B, D]
         返回：logits [B, C]
         """
-        x = x.to(self.device)
+        device = self.device
+        x = x.to(device)
         B, D = x.shape
         C = self.means.shape[0]
 
