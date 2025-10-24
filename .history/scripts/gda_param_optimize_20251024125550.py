@@ -115,7 +115,7 @@ def _collect_test_features(model) -> Tuple[torch.Tensor, torch.Tensor]:
     with torch.no_grad():
         for batch in model.test_loader:
             inputs = batch[0]
-            labels = batch[1]
+            
             inputs = inputs.to(device)
             feats = model.network.forward_features(inputs).cpu()
             features.append(feats)

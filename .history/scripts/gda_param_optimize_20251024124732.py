@@ -113,9 +113,7 @@ def _collect_test_features(model) -> Tuple[torch.Tensor, torch.Tensor]:
     device = model._device  # pylint: disable=protected-access
 
     with torch.no_grad():
-        for batch in model.test_loader:
-            inputs = batch[0]
-            labels = batch[1]
+        for inputs, labels in model.test_loader:
             inputs = inputs.to(device)
             feats = model.network.forward_features(inputs).cpu()
             features.append(feats)
@@ -418,7 +416,7 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="Optimise shared QDA regularisation strengths across all datasets.",
     )
-
+    
     parser.add_argument(
         "--eval-device",
         type=str,

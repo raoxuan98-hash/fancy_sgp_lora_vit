@@ -113,9 +113,7 @@ def _collect_test_features(model) -> Tuple[torch.Tensor, torch.Tensor]:
     device = model._device  # pylint: disable=protected-access
 
     with torch.no_grad():
-        for batch in model.test_loader:
-            inputs = batch[0]
-            labels = batch[1]
+        for inputs, labels in model.test_loader:
             inputs = inputs.to(device)
             feats = model.network.forward_features(inputs).cpu()
             features.append(feats)
@@ -409,16 +407,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--joint-lda",
         action="store_true",
-        default=True,
         help="Optimise a single LDA reg_alpha shared across all datasets.",
     )
     parser.add_argument(
         "--joint-qda",
         action="store_true",
-        default=True,
         help="Optimise shared QDA regularisation strengths across all datasets.",
     )
-
     parser.add_argument(
         "--eval-device",
         type=str,
@@ -433,7 +428,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main() -> None:parse_args
     cli_args = parse_args()
     base_args = _import_default_args()
 
