@@ -24,13 +24,20 @@ class ClassifierReconstructor:
             logging.info(f"[ClassifierReconstructor] LDA regularization alpha set to {self.lda_reg_alpha}")
         else:
             self.lda_reg_alpha = 0.4
-        if 'qda_reg_alpha1' in kwargs and 'qda_reg_alpha2' in kwargs:
+        if all(k in kwargs for k in ('qda_reg_alpha1', 'qda_reg_alpha2', 'qda_reg_alpha3')):
             self.qda_reg_alpha1 = kwargs['qda_reg_alpha1']
             self.qda_reg_alpha2 = kwargs['qda_reg_alpha2']
-            logging.info(f"[ClassifierReconstructor] QDA regularization alphas set to {self.qda_reg_alpha1}, {self.qda_reg_alpha2}")
+            self.qda_reg_alpha3 = kwargs['qda_reg_alpha3']
+            logging.info(
+                "[ClassifierReconstructor] QDA regularization alphas set to %s, %s, %s",
+                self.qda_reg_alpha1,
+                self.qda_reg_alpha2,
+                self.qda_reg_alpha3,
+            )
         else:
             self.qda_reg_alpha1 = 0.25
             self.qda_reg_alpha2 = 0.25
+            self.qda_reg_alpha3 = 0.25
 
     def build_classifiers(self, variants: Dict[str, Dict[int, object]], classifier_type: Union[str, List[str]] = ["lda", "qda"]) -> Dict[str, Dict[str, nn.Module]]:
         """
@@ -72,6 +79,7 @@ class ClassifierReconstructor:
             return QDAClassifierBuilder(
                 qda_reg_alpha1=self.qda_reg_alpha1,
                 qda_reg_alpha2=self.qda_reg_alpha2,
+                qda_reg_alpha3=self.qda_reg_alpha3,
                 device=self.device,
             )
 

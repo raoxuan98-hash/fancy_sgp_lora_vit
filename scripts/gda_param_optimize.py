@@ -181,6 +181,7 @@ def optimise_dataset(
     lda_range: Tuple[float, float],
     qda_alpha1_range: Tuple[float, float],
     qda_alpha2_range: Tuple[float, float],
+    qda_alpha3_range: Tuple[float, float],
     eval_device: torch.device,
     cache_features_on_device: bool,
     retain_features: bool,
@@ -229,9 +230,11 @@ def optimise_dataset(
     def qda_objective(trial: optuna.Trial) -> float:
         reg_alpha1 = trial.suggest_float("reg_alpha1", qda_alpha1_range[0], qda_alpha1_range[1])
         reg_alpha2 = trial.suggest_float("reg_alpha2", qda_alpha2_range[0], qda_alpha2_range[1])
+        reg_alpha3 = trial.suggest_float("reg_alpha3", qda_alpha3_range[0], qda_alpha3_range[1])
         builder = QDAClassifierBuilder(
             qda_reg_alpha1=reg_alpha1,
             qda_reg_alpha2=reg_alpha2,
+            qda_reg_alpha3=reg_alpha3,
             device=device_for_classifiers,
         )
         classifier = builder.build(reference_stats)
@@ -317,15 +320,18 @@ def _optimise_joint_qda(
     seed: int,
     qda_alpha1_range: Tuple[float, float],
     qda_alpha2_range: Tuple[float, float],
+    qda_alpha3_range: Tuple[float, float],
 ) -> Dict:
     datasets = [ctx["dataset"] for ctx in contexts]
 
     def objective(trial: optuna.Trial) -> float:
         reg_alpha1 = trial.suggest_float("reg_alpha1", qda_alpha1_range[0], qda_alpha1_range[1])
         reg_alpha2 = trial.suggest_float("reg_alpha2", qda_alpha2_range[0], qda_alpha2_range[1])
+        reg_alpha3 = trial.suggest_float("reg_alpha3", qda_alpha3_range[0], qda_alpha3_range[1])
         builder = QDAClassifierBuilder(
             qda_reg_alpha1=reg_alpha1,
             qda_reg_alpha2=reg_alpha2,
+            qda_reg_alpha3=reg_alpha3,
             device=str(eval_device),
         )
 
@@ -391,6 +397,14 @@ def parse_args() -> argparse.Namespace:
         help="Search range for QDA reg_alpha2.",
     )
     parser.add_argument(
+        "--qda-alpha3-range",
+        type=float,
+        nargs=2,
+        default=(0.0, 1.0),
+        metavar=("MIN", "MAX"),
+        help="Search range for QDA reg_alpha3.",
+    )
+    parser.add_argument(
         "--joint-lda",
         action="store_true",
         help="Optimise a single LDA reg_alpha shared across all datasets.",
@@ -443,6 +457,7 @@ def main() -> None:
             lda_range=tuple(cli_args.lda_range),
             qda_alpha1_range=tuple(cli_args.qda_alpha1_range),
             qda_alpha2_range=tuple(cli_args.qda_alpha2_range),
+            qda_alpha3_range=tuple(cli_args.qda_alpha3_range),
             eval_device=eval_device,
             cache_features_on_device=cli_args.cache_features_on_device,
             retain_features=retain_features,
@@ -475,6 +490,7 @@ def main() -> None:
                 seed=cli_args.seed + 1,
                 qda_alpha1_range=tuple(cli_args.qda_alpha1_range),
                 qda_alpha2_range=tuple(cli_args.qda_alpha2_range),
+                qda_alpha3_range=tuple(cli_args.qda_alpha3_range),
             )
 
         if len(joint_summary) > 1:
