@@ -158,7 +158,8 @@ class RegularizedGaussianDA(nn.Module):
 
         logging.info(
             f"[INFO] RegularizedGaussianQDA initialized: {self.num_classes} classes, "
-            f"qda_reg_alpha1={self.qda_reg_alpha1}, qda_reg_alpha2={self.qda_reg_alpha2}"
+            f"qda_reg_alpha1={self.qda_reg_alpha1}, qda_reg_alpha2={self.qda_reg_alpha2}, "
+            f"qda_reg_alpha3={self.qda_reg_alpha3}"
         )
 
     # ================= 判别函数（向量化） =================
