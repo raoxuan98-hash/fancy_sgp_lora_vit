@@ -22,7 +22,7 @@ wandb/
 tensorboard/
 runs/
 lightning_logs/
-experiments/
+ex
 # Model artifacts
 *.pt
 *.pth
