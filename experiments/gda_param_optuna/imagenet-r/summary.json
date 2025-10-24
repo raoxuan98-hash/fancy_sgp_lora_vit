@@ -1,0 +1,25 @@
+{
+  "dataset": "imagenet-r",
+  "init_cls": 200,
+  "seed": 1993,
+  "reference_variant": "SeqFT",
+  "lda": {
+    "best_value": 69.45,
+    "best_params": {
+      "reg_alpha": 0.001273112339806232
+    },
+    "best_metrics": {
+      "SeqFT": 69.45
+    }
+  },
+  "qda": {
+    "best_value": 75.6,
+    "best_params": {
+      "reg_alpha1": 0.5513378988307155,
+      "reg_alpha2": 0.3206075794122788
+    },
+    "best_metrics": {
+      "SeqFT": 75.6
+    }
+  }
+}

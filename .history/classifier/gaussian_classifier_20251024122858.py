@@ -86,9 +86,8 @@ class RegularizedGaussianDA(nn.Module):
         self,
         stats_dict: Dict[int, GaussianStatistics],
         class_priors: Dict[int, float] = None,
-        qda_reg_alpha1: float = 1.0,
-        qda_reg_alpha2: float = 1.0,
-        qda_reg_alpha3: float = 1.0, 
+        qda_reg_alpha1: float = 0.2,   # shrink to global
+        qda_reg_alpha2: float = 0.2,   # spherical
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         super().__init__()
@@ -97,7 +96,6 @@ class RegularizedGaussianDA(nn.Module):
         self.num_classes = len(self.class_ids)
         self.qda_reg_alpha1 = float(qda_reg_alpha1)
         self.qda_reg_alpha2 = float(qda_reg_alpha2)
-        self.qda_reg_alpha3 = float(qda_reg_alpha3)
         self.epsilon = 1e-4   # per-class稳健性
         self.epsilon_identity = 1e-6
 
@@ -128,9 +126,10 @@ class RegularizedGaussianDA(nn.Module):
         # ---- QDA 正则：β·Σ_c + α1·Σ_global + α2·(tr(Σ_c)/d)·I ----
         C, D, _ = covs.shape
         sph = torch.eye(D, device=self.device).unsqueeze(0)
-        a1, a2, a3 = self.qda_reg_alpha1, self.qda_reg_alpha2, self.qda_reg_alpha3
+        a1, a2 = self.qda_reg_alpha1, self.qda_reg_alpha2
+        beta = max(1.0 - a1 - a2, 0.0)
         covs_sym = 0.5 * (covs + covs.transpose(-1, -2))               # 数值对称化
-        covs_reg = a1 * covs_sym + a2 * global_cov.unsqueeze(0) + a3 * sph
+        covs_reg = beta * covs_sym + a1 * global_cov.unsqueeze(0) + a2 * sph
         covs_reg = covs_reg + self.epsilon * torch.eye(D, device=self.device).unsqueeze(0)
 
         # ---- 预计算每类逆阵与 logdet（Cholesky优先，失败回退SVD） ----

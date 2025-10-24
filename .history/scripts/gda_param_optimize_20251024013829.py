@@ -16,12 +16,6 @@ For every dataset, we:
 The training step still requires access to the datasets configured in
 ``utils/data1.py``.  When datasets are not available the script will fail
 before the optimisation loop begins.
-
-Command-line options allow:
-
-* Joint optimisation across all datasets for LDA/QDA regularisation strengths.
-* Selecting the device used for classifier evaluation while optionally avoiding
-  caching features on the GPU to reduce memory pressure.
 """
 
 from __future__ import annotations
@@ -33,7 +27,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Dict, Mapping, Tuple
 
 import optuna
 import torch
@@ -113,8 +107,8 @@ def _collect_test_features(model) -> Tuple[torch.Tensor, torch.Tensor]:
     device = model._device  # pylint: disable=protected-access
 
     with torch.no_grad():
-        for inputs, labels in model.test_loader:
-            inputs = inputs.to(device)
+        for batch in model.test_loader:
+            inputs = batch[].to(device)
             feats = model.network.forward_features(inputs).cpu()
             features.append(feats)
             targets.append(labels.cpu())
@@ -124,11 +118,6 @@ def _collect_test_features(model) -> Tuple[torch.Tensor, torch.Tensor]:
 
 def _evaluate_classifier(classifier, features: torch.Tensor, targets: torch.Tensor) -> float:
     """Compute accuracy (%) of a classifier on precomputed features."""
-
-    classifier.eval()
-    classifier_device = next(classifier.parameters()).device
-    if features.device != classifier_device:
-        features = features.to(classifier_device)
 
     with torch.no_grad():
         logits = classifier(features)
@@ -181,10 +170,7 @@ def optimise_dataset(
     lda_range: Tuple[float, float],
     qda_alpha1_range: Tuple[float, float],
     qda_alpha2_range: Tuple[float, float],
-    eval_device: torch.device,
-    cache_features_on_device: bool,
-    retain_features: bool,
-) -> Tuple[Dict, Optional[Dict[str, Any]]]:
+) -> Dict:
     logging.info("===== Processing %s (init_cls=%d) =====", dataset, init_cls)
     args = _prepare_args(base_args, dataset, init_cls, seed)
 
@@ -200,15 +186,8 @@ def optimise_dataset(
     selected_variant, reference_stats = _select_reference_stats(variants)
     logging.info("Using %s statistics for optimisation.", selected_variant)
     features_cpu, targets = _collect_test_features(model)
-    device_for_classifiers = str(eval_device)
-
-    if cache_features_on_device and eval_device.type != "cpu":
-        features_for_objective = features_cpu.to(eval_device)
-    else:
-        features_for_objective = features_cpu
-
-    if not retain_features:
-        del features_cpu
+    features_on_device = features_cpu.to(device)
+    del features_cpu
 
     dataset_dir = output_dir / dataset
     dataset_dir.mkdir(parents=True, exist_ok=True)
@@ -218,12 +197,11 @@ def optimise_dataset(
 
     def lda_objective(trial: optuna.Trial) -> float:
         reg_alpha = trial.suggest_float("reg_alpha", lda_range[0], lda_range[1])
-        builder = LDAClassifierBuilder(reg_alpha=reg_alpha, device=device_for_classifiers)
+        builder = LDAClassifierBuilder(reg_alpha=reg_alpha, device=device)
         classifier = builder.build(reference_stats)
-        accuracy = _evaluate_classifier(classifier, features_for_objective, targets)
+        accuracy = _evaluate_classifier(classifier, features_on_device, targets)
         metrics = {selected_variant: accuracy}
         trial.set_user_attr("metrics", metrics)
-        del classifier
         return accuracy
 
     def qda_objective(trial: optuna.Trial) -> float:
@@ -232,13 +210,12 @@ def optimise_dataset(
         builder = QDAClassifierBuilder(
             qda_reg_alpha1=reg_alpha1,
             qda_reg_alpha2=reg_alpha2,
-            device=device_for_classifiers,
+            device=device,
         )
         classifier = builder.build(reference_stats)
-        accuracy = _evaluate_classifier(classifier, features_for_objective, targets)
+        accuracy = _evaluate_classifier(classifier, features_on_device, targets)
         metrics = {selected_variant: accuracy}
         trial.set_user_attr("metrics", metrics)
-        del classifier
         return accuracy
 
     _, lda_summary = _optimise_classifier("lda", lda_objective, n_trials, dataset_dir, seed)
@@ -256,94 +233,9 @@ def optimise_dataset(
     with open(dataset_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(dataset_summary, f, ensure_ascii=False, indent=2)
 
-    context: Optional[Dict[str, Any]] = None
-    if retain_features:
-        context = {
-            "dataset": dataset,
-            "init_cls": init_cls,
-            "seed": seed,
-            "reference_variant": selected_variant,
-            "reference_stats": reference_stats,
-            "features": features_cpu,
-            "targets": targets,
-        }
-
-    # Explicitly release resources tied to the model and cached tensors
+    # Explicitly release resources tied to the model
     del model
-    if cache_features_on_device and eval_device.type != "cpu":
-        del features_for_objective
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-
-    return dataset_summary, context
-
-
-def _optimise_joint_lda(
-    contexts: List[Dict[str, Any]],
-    eval_device: torch.device,
-    n_trials: int,
-    output_dir: Path,
-    seed: int,
-    lda_range: Tuple[float, float],
-) -> Dict:
-    datasets = [ctx["dataset"] for ctx in contexts]
-
-    def objective(trial: optuna.Trial) -> float:
-        reg_alpha = trial.suggest_float("reg_alpha", lda_range[0], lda_range[1])
-        builder = LDAClassifierBuilder(reg_alpha=reg_alpha, device=str(eval_device))
-
-        metrics: Dict[str, float] = {}
-        for ctx in contexts:
-            classifier = builder.build(ctx["reference_stats"])
-            accuracy = _evaluate_classifier(classifier, ctx["features"], ctx["targets"])
-            metrics[ctx["dataset"]] = accuracy
-            del classifier
-
-        mean_accuracy = float(round(sum(metrics.values()) / len(metrics), 4))
-        metrics["mean_accuracy"] = mean_accuracy
-        trial.set_user_attr("metrics", metrics)
-        return mean_accuracy
-
-    _, summary = _optimise_classifier("joint_lda", objective, n_trials, output_dir, seed)
-    summary["datasets"] = datasets
-    return summary
-
-
-def _optimise_joint_qda(
-    contexts: List[Dict[str, Any]],
-    eval_device: torch.device,
-    n_trials: int,
-    output_dir: Path,
-    seed: int,
-    qda_alpha1_range: Tuple[float, float],
-    qda_alpha2_range: Tuple[float, float],
-) -> Dict:
-    datasets = [ctx["dataset"] for ctx in contexts]
-
-    def objective(trial: optuna.Trial) -> float:
-        reg_alpha1 = trial.suggest_float("reg_alpha1", qda_alpha1_range[0], qda_alpha1_range[1])
-        reg_alpha2 = trial.suggest_float("reg_alpha2", qda_alpha2_range[0], qda_alpha2_range[1])
-        builder = QDAClassifierBuilder(
-            qda_reg_alpha1=reg_alpha1,
-            qda_reg_alpha2=reg_alpha2,
-            device=str(eval_device),
-        )
-
-        metrics: Dict[str, float] = {}
-        for ctx in contexts:
-            classifier = builder.build(ctx["reference_stats"])
-            accuracy = _evaluate_classifier(classifier, ctx["features"], ctx["targets"])
-            metrics[ctx["dataset"]] = accuracy
-            del classifier
-
-        mean_accuracy = float(round(sum(metrics.values()) / len(metrics), 4))
-        metrics["mean_accuracy"] = mean_accuracy
-        trial.set_user_attr("metrics", metrics)
-        return mean_accuracy
-
-    _, summary = _optimise_classifier("joint_qda", objective, n_trials, output_dir, seed)
-    summary["datasets"] = datasets
-    return summary
+    return dataset_summary
 
 
 def parse_args() -> argparse.Namespace:
@@ -390,27 +282,6 @@ def parse_args() -> argparse.Namespace:
         metavar=("MIN", "MAX"),
         help="Search range for QDA reg_alpha2.",
     )
-    parser.add_argument(
-        "--joint-lda",
-        action="store_true",
-        help="Optimise a single LDA reg_alpha shared across all datasets.",
-    )
-    parser.add_argument(
-        "--joint-qda",
-        action="store_true",
-        help="Optimise shared QDA regularisation strengths across all datasets.",
-    )
-    parser.add_argument(
-        "--eval-device",
-        type=str,
-        default="cpu",
-        help="Device used for classifier evaluation (e.g., 'cpu', 'cuda:0').",
-    )
-    parser.add_argument(
-        "--cache-features-on-device",
-        action="store_true",
-        help="Keep extracted features on the evaluation device. Disable to save GPU memory.",
-    )
     return parser.parse_args()
 
 
@@ -428,12 +299,8 @@ def main() -> None:
     cli_args.output_dir.mkdir(parents=True, exist_ok=True)
 
     all_summaries = {}
-    eval_device = torch.device(cli_args.eval_device)
-    retain_features = bool(cli_args.joint_lda or cli_args.joint_qda)
-    contexts: List[Dict[str, Any]] = []
-
     for name, init_cls in datasets.items():
-        summary, context = optimise_dataset(
+        summary = optimise_dataset(
             dataset=name,
             init_cls=init_cls,
             base_args=base_args,
@@ -443,45 +310,8 @@ def main() -> None:
             lda_range=tuple(cli_args.lda_range),
             qda_alpha1_range=tuple(cli_args.qda_alpha1_range),
             qda_alpha2_range=tuple(cli_args.qda_alpha2_range),
-            eval_device=eval_device,
-            cache_features_on_device=cli_args.cache_features_on_device,
-            retain_features=retain_features,
         )
         all_summaries[name] = summary
-        if context is not None:
-            contexts.append(context)
-
-    if contexts:
-        joint_dir = cli_args.output_dir / "joint"
-        joint_dir.mkdir(parents=True, exist_ok=True)
-        joint_summary: Dict[str, Any] = {"datasets": [ctx["dataset"] for ctx in contexts]}
-
-        if cli_args.joint_lda:
-            joint_summary["lda"] = _optimise_joint_lda(
-                contexts=contexts,
-                eval_device=eval_device,
-                n_trials=cli_args.n_trials,
-                output_dir=joint_dir,
-                seed=cli_args.seed,
-                lda_range=tuple(cli_args.lda_range),
-            )
-
-        if cli_args.joint_qda:
-            joint_summary["qda"] = _optimise_joint_qda(
-                contexts=contexts,
-                eval_device=eval_device,
-                n_trials=cli_args.n_trials,
-                output_dir=joint_dir,
-                seed=cli_args.seed + 1,
-                qda_alpha1_range=tuple(cli_args.qda_alpha1_range),
-                qda_alpha2_range=tuple(cli_args.qda_alpha2_range),
-            )
-
-        if len(joint_summary) > 1:
-            with open(joint_dir / "summary.json", "w", encoding="utf-8") as f:
-                json.dump(joint_summary, f, ensure_ascii=False, indent=2)
-
-        all_summaries["joint"] = joint_summary
 
     with open(cli_args.output_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(all_summaries, f, ensure_ascii=False, indent=2)

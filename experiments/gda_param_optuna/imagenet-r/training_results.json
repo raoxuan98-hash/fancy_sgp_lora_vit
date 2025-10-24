@@ -1,0 +1,12 @@
+{
+  "1": {
+    "SeqFT + LDA": 69.27,
+    "SeqFT + linear_transform + LDA": 69.27,
+    "SeqFT + weaknonlinear_transform + LDA": 69.27,
+    "SeqFT + attention_transform + LDA": 69.27,
+    "SeqFT + QDA": 73.18,
+    "SeqFT + linear_transform + QDA": 73.18,
+    "SeqFT + weaknonlinear_transform + QDA": 73.18,
+    "SeqFT + attention_transform + QDA": 73.18
+  }
+}
