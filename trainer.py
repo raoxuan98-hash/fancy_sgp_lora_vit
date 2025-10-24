@@ -29,8 +29,11 @@ def train(args):
         args['log_path'] = logfile_name
         results = train_single_run(args)
         all_results[f"seed_{seed}"] = results
-    aggregate_seed_results(all_results)
-    return all_results
+    aggregated = aggregate_seed_results(all_results)
+    return {
+        'seeds': all_results,
+        'aggregate': aggregated,
+    }
 
 def train_single_run(args, return_model: bool = False):
     # Setting random seed and device for reproducibility
