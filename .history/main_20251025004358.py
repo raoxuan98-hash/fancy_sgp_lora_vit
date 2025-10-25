@@ -1,5 +1,5 @@
-# import os 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+import os 
+os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
 
 import argparse
@@ -57,8 +57,8 @@ def build_parser() -> argparse.ArgumentParser:
     basic = parser.add_argument_group('basic', 'General / high‑level options')
     basic.add_argument('--dataset', type=str, default='cifar100_224', choices=['imagenet-r', 'cifar100_224', 'cub200_224', 'cars196_224', 'caltech101_224', 'oxfordpet37_224', 'food101_224', 'resisc45_224'], help='Dataset to use')
     basic.add_argument('--smart_defaults', action='store_true', default=False, help='If set, overwrite a few hyper‑parameters according to the dataset.')
-    basic.add_argument('--user', type=str, default='sgp_lora_vit_main', choices=['authors'], help='User identifier (currently unused).')
-    basic.add_argument('--test', action='store_true', default=False, help='If set, run a quick test with reduced settings.')
+    basic.add_argument('--user', type=str, default='acl-dc-蒸馏方案对比', choices=['authors'], help='User identifier (currently unused).')
+    basic.add_argument('--test', action='store_true', default=True, help='If set, run a quick test with reduced settings.')
 
     mem = parser.add_argument_group('memory', 'Memory / replay buffer')
     mem.add_argument('--memory_size', type=int, default=0, help='Total memory budget.')
@@ -67,7 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
     mem.add_argument('--shuffle', action='store_true', default=True, help='Shuffle replay buffer before each epoch.')
 
     cls = parser.add_argument_group('class', 'Class increment settings')
-    cls.add_argument('--init_cls', type=int, default=10, help='Number of classes in the first task.')
+    cls.add_argument('--init_cls', type=int, default=100, help='Number of classes in the first task.')
     cls.add_argument('--increment', type=int, default=0, help='Number of new classes added per task.')
 
     model = parser.add_argument_group('model', 'Backbone & LoRA settings')
@@ -76,8 +76,8 @@ def build_parser() -> argparse.ArgumentParser:
     model.add_argument('--weight_decay', type=float, default=3e-5, help='Weight decay.')
 
     train_grp = parser.add_argument_group('training', 'Optimisation & schedule')  
-    train_grp.add_argument('--seed_list', nargs='+', type=int, default=[1993, 1996, 1997], help='Random seeds for multiple runs.')
-    train_grp.add_argument('--iterations', type=int, default=200, help='Training iterations per task.')
+    train_grp.add_argument('--seed_list', nargs='+', type=int, default=[1993], help='Random seeds for multiple runs.')
+    train_grp.add_argument('--iterations', type=int, default=2000, help='Training iterations per task.')
     train_grp.add_argument('--warmup_ratio', type=int, default=0.1, help='Warm‑up ratio for learning rate schedule.')
     train_grp.add_argument('--ca_epochs', type=int, default=5, help='Classifier alignment epochs.')
     train_grp.add_argument('--optimizer', type=str, default='adamw', help='Optimizer name (adamw / sgd).')

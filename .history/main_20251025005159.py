@@ -1,5 +1,5 @@
-# import os 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+import os 
+os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
 
 import argparse
@@ -57,7 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
     basic = parser.add_argument_group('basic', 'General / high‑level options')
     basic.add_argument('--dataset', type=str, default='cifar100_224', choices=['imagenet-r', 'cifar100_224', 'cub200_224', 'cars196_224', 'caltech101_224', 'oxfordpet37_224', 'food101_224', 'resisc45_224'], help='Dataset to use')
     basic.add_argument('--smart_defaults', action='store_true', default=False, help='If set, overwrite a few hyper‑parameters according to the dataset.')
-    basic.add_argument('--user', type=str, default='sgp_lora_vit_main', choices=['authors'], help='User identifier (currently unused).')
+    basic.add_argument('--user', type=str, default='acl-dc-蒸馏方案对比', choices=['authors'], help='User identifier (currently unused).')
     basic.add_argument('--test', action='store_true', default=False, help='If set, run a quick test with reduced settings.')
 
     mem = parser.add_argument_group('memory', 'Memory / replay buffer')

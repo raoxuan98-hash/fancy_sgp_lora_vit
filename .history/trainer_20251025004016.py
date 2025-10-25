@@ -29,11 +29,8 @@ def train(args):
         args['log_path'] = logfile_name
         results = train_single_run(args)
         all_results[f"seed_{seed}"] = results
-    aggregated = aggregate_seed_results(all_results)
-    return {
-        'seeds': all_results,
-        'aggregate': aggregated,
-    }
+    aggregate_seed_results(all_results)
+    return all_results
 
 def train_single_run(args, return_model: bool = False):
     # Setting random seed and device for reproducibility
@@ -311,13 +308,6 @@ def aggregate_seed_results(seed_results):
     final_task_stats = {}
     avg_task_stats = {}
 
-    if not all_variants:
-        logging.warning("⚠️ No accuracy statistics found in seed results.")
-        return {
-            "final_task": final_task_stats,
-            "average_across_tasks": avg_task_stats,
-        }
-
     for variant in all_variants:
         f_vals = np.array(final_task_values[variant])
         a_vals = np.array(avg_task_values[variant])
@@ -340,5 +330,4 @@ def aggregate_seed_results(seed_results):
     # Return structured stats
     return {
         "final_task": final_task_stats,
-        "average_across_tasks": avg_task_stats,
-    }
+        "average_across_tasks": avg_task_stats}
