@@ -88,7 +88,8 @@ class SubspaceLoRA(BaseLearner):
             device=self._device,
             lda_reg_alpha=args['lda_reg_alpha'],
             qda_reg_alpha1=args['qda_reg_alpha1'],
-            qda_reg_alpha2=args['qda_reg_alpha2']
+            qda_reg_alpha2=args['qda_reg_alpha2'],
+            qda_reg_alpha3=args['qda_reg_alpha3']
         )
         
         self.distillator = Distiller(

@@ -1,0 +1,48 @@
+{
+  "datasets": [
+    "imagenet-r",
+    "cifar100_224",
+    "cub200_224",
+    "cars196_224"
+  ],
+  "lda": {
+    "best_value": 79.4767,
+    "best_params": {
+      "reg_alpha": 0.10577741210137571
+    },
+    "best_metrics": {
+      "imagenet-r": 69.35,
+      "cifar100_224": 83.85,
+      "cub200_224": 83.4484,
+      "cars196_224": 81.2585,
+      "mean_accuracy": 79.4767
+    },
+    "datasets": [
+      "imagenet-r",
+      "cifar100_224",
+      "cub200_224",
+      "cars196_224"
+    ]
+  },
+  "qda": {
+    "best_value": 82.8942,
+    "best_params": {
+      "reg_alpha1": 0.14802750894638508,
+      "reg_alpha2": 0.9758397778054617,
+      "reg_alpha3": 0.2154859786665987
+    },
+    "best_metrics": {
+      "imagenet-r": 75.5833,
+      "cifar100_224": 87.66,
+      "cub200_224": 83.4311,
+      "cars196_224": 84.9024,
+      "mean_accuracy": 82.8942
+    },
+    "datasets": [
+      "imagenet-r",
+      "cifar100_224",
+      "cub200_224",
+      "cars196_224"
+    ]
+  }
+}

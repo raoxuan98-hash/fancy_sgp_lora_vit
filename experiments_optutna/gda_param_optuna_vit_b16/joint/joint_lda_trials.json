@@ -1,0 +1,1402 @@
+[
+  {
+    "number": 0,
+    "value": 84.3623,
+    "params": {
+      "reg_alpha": 0.10042224286766133
+    },
+    "metrics": {
+      "imagenet-r": 76.3667,
+      "cifar100_224": 90.08,
+      "cub200_224": 87.9531,
+      "cars196_224": 83.0494,
+      "mean_accuracy": 84.3623
+    }
+  },
+  {
+    "number": 1,
+    "value": 84.412,
+    "params": {
+      "reg_alpha": 0.21941135757659003
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.02,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.7882,
+      "mean_accuracy": 84.412
+    }
+  },
+  {
+    "number": 2,
+    "value": 82.6278,
+    "params": {
+      "reg_alpha": 0.9310663354302137
+    },
+    "metrics": {
+      "imagenet-r": 77.1667,
+      "cifar100_224": 89.7,
+      "cub200_224": 87.7459,
+      "cars196_224": 75.8985,
+      "mean_accuracy": 82.6278
+    }
+  },
+  {
+    "number": 3,
+    "value": 84.3772,
+    "params": {
+      "reg_alpha": 0.33135937932075354
+    },
+    "metrics": {
+      "imagenet-r": 77.0667,
+      "cifar100_224": 90.02,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.3654,
+      "mean_accuracy": 84.3772
+    }
+  },
+  {
+    "number": 4,
+    "value": 84.4316,
+    "params": {
+      "reg_alpha": 0.20454938613274065
+    },
+    "metrics": {
+      "imagenet-r": 76.8,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.8255,
+      "mean_accuracy": 84.4316
+    }
+  },
+  {
+    "number": 5,
+    "value": 84.4564,
+    "params": {
+      "reg_alpha": 0.16838654112510065
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4564
+    }
+  },
+  {
+    "number": 6,
+    "value": 84.2171,
+    "params": {
+      "reg_alpha": 0.5071506764525194
+    },
+    "metrics": {
+      "imagenet-r": 77.3333,
+      "cifar100_224": 89.88,
+      "cub200_224": 88.1602,
+      "cars196_224": 81.4948,
+      "mean_accuracy": 84.2171
+    }
+  },
+  {
+    "number": 7,
+    "value": 83.7981,
+    "params": {
+      "reg_alpha": 0.7257355264179883
+    },
+    "metrics": {
+      "imagenet-r": 77.5833,
+      "cifar100_224": 89.79,
+      "cub200_224": 88.1774,
+      "cars196_224": 79.6418,
+      "mean_accuracy": 83.7981
+    }
+  },
+  {
+    "number": 8,
+    "value": 84.1042,
+    "params": {
+      "reg_alpha": 0.5708488802312154
+    },
+    "metrics": {
+      "imagenet-r": 77.4,
+      "cifar100_224": 89.86,
+      "cub200_224": 88.2465,
+      "cars196_224": 80.9103,
+      "mean_accuracy": 84.1042
+    }
+  },
+  {
+    "number": 9,
+    "value": 84.4694,
+    "params": {
+      "reg_alpha": 0.1846414616400318
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.07,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.9499,
+      "mean_accuracy": 84.4694
+    }
+  },
+  {
+    "number": 10,
+    "value": 84.1519,
+    "params": {
+      "reg_alpha": 0.006044486899727475
+    },
+    "metrics": {
+      "imagenet-r": 76.1333,
+      "cifar100_224": 90.27,
+      "cub200_224": 87.3662,
+      "cars196_224": 82.838,
+      "mean_accuracy": 84.1519
+    }
+  },
+  {
+    "number": 11,
+    "value": 84.3862,
+    "params": {
+      "reg_alpha": 0.344881030040331
+    },
+    "metrics": {
+      "imagenet-r": 77.15,
+      "cifar100_224": 89.99,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.3654,
+      "mean_accuracy": 84.3862
+    }
+  },
+  {
+    "number": 12,
+    "value": 84.3731,
+    "params": {
+      "reg_alpha": 0.34186503660051215
+    },
+    "metrics": {
+      "imagenet-r": 77.1,
+      "cifar100_224": 90.0,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.3529,
+      "mean_accuracy": 84.3731
+    }
+  },
+  {
+    "number": 13,
+    "value": 84.3039,
+    "params": {
+      "reg_alpha": 0.022196507747861027
+    },
+    "metrics": {
+      "imagenet-r": 76.2167,
+      "cifar100_224": 90.31,
+      "cub200_224": 87.6769,
+      "cars196_224": 83.0121,
+      "mean_accuracy": 84.3039
+    }
+  },
+  {
+    "number": 14,
+    "value": 84.4348,
+    "params": {
+      "reg_alpha": 0.20613301814476093
+    },
+    "metrics": {
+      "imagenet-r": 76.8,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.838,
+      "mean_accuracy": 84.4348
+    }
+  },
+  {
+    "number": 15,
+    "value": 83.9619,
+    "params": {
+      "reg_alpha": 0.6506418523311603
+    },
+    "metrics": {
+      "imagenet-r": 77.5,
+      "cifar100_224": 89.78,
+      "cub200_224": 88.2292,
+      "cars196_224": 80.3383,
+      "mean_accuracy": 83.9619
+    }
+  },
+  {
+    "number": 16,
+    "value": 84.3256,
+    "params": {
+      "reg_alpha": 0.4075790485560281
+    },
+    "metrics": {
+      "imagenet-r": 77.2167,
+      "cifar100_224": 89.94,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.0545,
+      "mean_accuracy": 84.3256
+    }
+  },
+  {
+    "number": 17,
+    "value": 84.4564,
+    "params": {
+      "reg_alpha": 0.16614257567678928
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4564
+    }
+  },
+  {
+    "number": 18,
+    "value": 83.4675,
+    "params": {
+      "reg_alpha": 0.8360199392635594
+    },
+    "metrics": {
+      "imagenet-r": 77.5833,
+      "cifar100_224": 89.78,
+      "cub200_224": 88.1084,
+      "cars196_224": 78.3982,
+      "mean_accuracy": 83.4675
+    }
+  },
+  {
+    "number": 19,
+    "value": 84.3045,
+    "params": {
+      "reg_alpha": 0.4423551278105248
+    },
+    "metrics": {
+      "imagenet-r": 77.25,
+      "cifar100_224": 89.92,
+      "cub200_224": 88.1429,
+      "cars196_224": 81.9052,
+      "mean_accuracy": 84.3045
+    }
+  },
+  {
+    "number": 20,
+    "value": 84.4176,
+    "params": {
+      "reg_alpha": 0.1272716709475833
+    },
+    "metrics": {
+      "imagenet-r": 76.5833,
+      "cifar100_224": 90.03,
+      "cub200_224": 87.9703,
+      "cars196_224": 83.0867,
+      "mean_accuracy": 84.4176
+    }
+  },
+  {
+    "number": 21,
+    "value": 84.3918,
+    "params": {
+      "reg_alpha": 0.10901406869272673
+    },
+    "metrics": {
+      "imagenet-r": 76.45,
+      "cifar100_224": 90.09,
+      "cub200_224": 87.9531,
+      "cars196_224": 83.0742,
+      "mean_accuracy": 84.3918
+    }
+  },
+  {
+    "number": 22,
+    "value": 84.3952,
+    "params": {
+      "reg_alpha": 0.2611277521371875
+    },
+    "metrics": {
+      "imagenet-r": 76.9167,
+      "cifar100_224": 90.0,
+      "cub200_224": 87.9876,
+      "cars196_224": 82.6763,
+      "mean_accuracy": 84.3952
+    }
+  },
+  {
+    "number": 23,
+    "value": 84.4108,
+    "params": {
+      "reg_alpha": 0.14224756699701468
+    },
+    "metrics": {
+      "imagenet-r": 76.6333,
+      "cifar100_224": 90.01,
+      "cub200_224": 87.9876,
+      "cars196_224": 83.0121,
+      "mean_accuracy": 84.4108
+    }
+  },
+  {
+    "number": 24,
+    "value": 84.4025,
+    "params": {
+      "reg_alpha": 0.2753161435113087
+    },
+    "metrics": {
+      "imagenet-r": 76.9667,
+      "cifar100_224": 89.97,
+      "cub200_224": 88.0221,
+      "cars196_224": 82.6514,
+      "mean_accuracy": 84.4025
+    }
+  },
+  {
+    "number": 25,
+    "value": 84.2595,
+    "params": {
+      "reg_alpha": 0.015492612702793673
+    },
+    "metrics": {
+      "imagenet-r": 76.2167,
+      "cifar100_224": 90.28,
+      "cub200_224": 87.5043,
+      "cars196_224": 83.0369,
+      "mean_accuracy": 84.2595
+    }
+  },
+  {
+    "number": 26,
+    "value": 84.4297,
+    "params": {
+      "reg_alpha": 0.1583398338055536
+    },
+    "metrics": {
+      "imagenet-r": 76.7167,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0048,
+      "cars196_224": 82.9872,
+      "mean_accuracy": 84.4297
+    }
+  },
+  {
+    "number": 27,
+    "value": 84.2911,
+    "params": {
+      "reg_alpha": 0.4339507717532804
+    },
+    "metrics": {
+      "imagenet-r": 77.2333,
+      "cifar100_224": 89.93,
+      "cub200_224": 88.1084,
+      "cars196_224": 81.8928,
+      "mean_accuracy": 84.2911
+    }
+  },
+  {
+    "number": 28,
+    "value": 84.414,
+    "params": {
+      "reg_alpha": 0.2888745731736919
+    },
+    "metrics": {
+      "imagenet-r": 77.0,
+      "cifar100_224": 89.99,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.6265,
+      "mean_accuracy": 84.414
+    }
+  },
+  {
+    "number": 29,
+    "value": 84.3671,
+    "params": {
+      "reg_alpha": 0.06474746944096882
+    },
+    "metrics": {
+      "imagenet-r": 76.35,
+      "cifar100_224": 90.19,
+      "cub200_224": 87.8668,
+      "cars196_224": 83.0618,
+      "mean_accuracy": 84.3671
+    }
+  },
+  {
+    "number": 30,
+    "value": 84.3723,
+    "params": {
+      "reg_alpha": 0.07987402496599816
+    },
+    "metrics": {
+      "imagenet-r": 76.3333,
+      "cifar100_224": 90.14,
+      "cub200_224": 87.8668,
+      "cars196_224": 83.1489,
+      "mean_accuracy": 84.3723
+    }
+  },
+  {
+    "number": 31,
+    "value": 84.4486,
+    "params": {
+      "reg_alpha": 0.19948682055302436
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.02,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.9001,
+      "mean_accuracy": 84.4486
+    }
+  },
+  {
+    "number": 32,
+    "value": 84.4638,
+    "params": {
+      "reg_alpha": 0.18354775619136657
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.06,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.9374,
+      "mean_accuracy": 84.4638
+    }
+  },
+  {
+    "number": 33,
+    "value": 84.4062,
+    "params": {
+      "reg_alpha": 0.24711403159437217
+    },
+    "metrics": {
+      "imagenet-r": 76.8667,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0221,
+      "cars196_224": 82.726,
+      "mean_accuracy": 84.4062
+    }
+  },
+  {
+    "number": 34,
+    "value": 84.4532,
+    "params": {
+      "reg_alpha": 0.19094107670246785
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.1084,
+      "cars196_224": 82.8877,
+      "mean_accuracy": 84.4532
+    }
+  },
+  {
+    "number": 35,
+    "value": 84.3454,
+    "params": {
+      "reg_alpha": 0.37669355069940935
+    },
+    "metrics": {
+      "imagenet-r": 77.1167,
+      "cifar100_224": 89.95,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.241,
+      "mean_accuracy": 84.3454
+    }
+  },
+  {
+    "number": 36,
+    "value": 84.3617,
+    "params": {
+      "reg_alpha": 0.07847021556903126
+    },
+    "metrics": {
+      "imagenet-r": 76.3333,
+      "cifar100_224": 90.14,
+      "cub200_224": 87.8495,
+      "cars196_224": 83.124,
+      "mean_accuracy": 84.3617
+    }
+  },
+  {
+    "number": 37,
+    "value": 84.4003,
+    "params": {
+      "reg_alpha": 0.30138154367685005
+    },
+    "metrics": {
+      "imagenet-r": 77.0,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.5519,
+      "mean_accuracy": 84.4003
+    }
+  },
+  {
+    "number": 38,
+    "value": 84.2005,
+    "params": {
+      "reg_alpha": 0.5202437798503962
+    },
+    "metrics": {
+      "imagenet-r": 77.3667,
+      "cifar100_224": 89.9,
+      "cub200_224": 88.1774,
+      "cars196_224": 81.358,
+      "mean_accuracy": 84.2005
+    }
+  },
+  {
+    "number": 39,
+    "value": 81.8533,
+    "params": {
+      "reg_alpha": 0.9664707921890657
+    },
+    "metrics": {
+      "imagenet-r": 76.5167,
+      "cifar100_224": 89.52,
+      "cub200_224": 87.418,
+      "cars196_224": 73.9585,
+      "mean_accuracy": 81.8533
+    }
+  },
+  {
+    "number": 40,
+    "value": 84.4606,
+    "params": {
+      "reg_alpha": 0.17201140125213865
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4606
+    }
+  },
+  {
+    "number": 41,
+    "value": 84.4649,
+    "params": {
+      "reg_alpha": 0.1729989747600408
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4649
+    }
+  },
+  {
+    "number": 42,
+    "value": 84.3953,
+    "params": {
+      "reg_alpha": 0.2256054229076892
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.0,
+      "cub200_224": 88.0221,
+      "cars196_224": 82.7758,
+      "mean_accuracy": 84.3953
+    }
+  },
+  {
+    "number": 43,
+    "value": 84.4337,
+    "params": {
+      "reg_alpha": 0.12311632164301693
+    },
+    "metrics": {
+      "imagenet-r": 76.5833,
+      "cifar100_224": 90.06,
+      "cub200_224": 88.0048,
+      "cars196_224": 83.0867,
+      "mean_accuracy": 84.4337
+    }
+  },
+  {
+    "number": 44,
+    "value": 84.3593,
+    "params": {
+      "reg_alpha": 0.06899681460414599
+    },
+    "metrics": {
+      "imagenet-r": 76.3333,
+      "cifar100_224": 90.18,
+      "cub200_224": 87.8495,
+      "cars196_224": 83.0742,
+      "mean_accuracy": 84.3593
+    }
+  },
+  {
+    "number": 45,
+    "value": 84.3778,
+    "params": {
+      "reg_alpha": 0.3303215403724724
+    },
+    "metrics": {
+      "imagenet-r": 77.0667,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.3778,
+      "mean_accuracy": 84.3778
+    }
+  },
+  {
+    "number": 46,
+    "value": 84.4057,
+    "params": {
+      "reg_alpha": 0.23750444264013681
+    },
+    "metrics": {
+      "imagenet-r": 76.85,
+      "cifar100_224": 90.0,
+      "cub200_224": 88.0221,
+      "cars196_224": 82.7509,
+      "mean_accuracy": 84.4057
+    }
+  },
+  {
+    "number": 47,
+    "value": 84.4564,
+    "params": {
+      "reg_alpha": 0.1660369863467978
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4564
+    }
+  },
+  {
+    "number": 48,
+    "value": 84.3693,
+    "params": {
+      "reg_alpha": 0.05161128506490331
+    },
+    "metrics": {
+      "imagenet-r": 76.3333,
+      "cifar100_224": 90.23,
+      "cub200_224": 87.815,
+      "cars196_224": 83.0991,
+      "mean_accuracy": 84.3693
+    }
+  },
+  {
+    "number": 49,
+    "value": 83.9522,
+    "params": {
+      "reg_alpha": 0.6733847058093595
+    },
+    "metrics": {
+      "imagenet-r": 77.5833,
+      "cifar100_224": 89.79,
+      "cub200_224": 88.2465,
+      "cars196_224": 80.189,
+      "mean_accuracy": 83.9522
+    }
+  },
+  {
+    "number": 50,
+    "value": 84.3479,
+    "params": {
+      "reg_alpha": 0.37590776006675786
+    },
+    "metrics": {
+      "imagenet-r": 77.1167,
+      "cifar100_224": 89.96,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.241,
+      "mean_accuracy": 84.3479
+    }
+  },
+  {
+    "number": 51,
+    "value": 84.4583,
+    "params": {
+      "reg_alpha": 0.1650740814721808
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.9872,
+      "mean_accuracy": 84.4583
+    }
+  },
+  {
+    "number": 52,
+    "value": 84.4549,
+    "params": {
+      "reg_alpha": 0.19352987881531775
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.1084,
+      "cars196_224": 82.8877,
+      "mean_accuracy": 84.4549
+    }
+  },
+  {
+    "number": 53,
+    "value": 84.4119,
+    "params": {
+      "reg_alpha": 0.11561019918130258
+    },
+    "metrics": {
+      "imagenet-r": 76.4833,
+      "cifar100_224": 90.09,
+      "cub200_224": 87.9876,
+      "cars196_224": 83.0867,
+      "mean_accuracy": 84.4119
+    }
+  },
+  {
+    "number": 54,
+    "value": 84.4046,
+    "params": {
+      "reg_alpha": 0.3021302851578282
+    },
+    "metrics": {
+      "imagenet-r": 77.0,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.5519,
+      "mean_accuracy": 84.4046
+    }
+  },
+  {
+    "number": 55,
+    "value": 84.4291,
+    "params": {
+      "reg_alpha": 0.158799727606049
+    },
+    "metrics": {
+      "imagenet-r": 76.7167,
+      "cifar100_224": 90.02,
+      "cub200_224": 88.0048,
+      "cars196_224": 82.9748,
+      "mean_accuracy": 84.4291
+    }
+  },
+  {
+    "number": 56,
+    "value": 84.4136,
+    "params": {
+      "reg_alpha": 0.23216943085947567
+    },
+    "metrics": {
+      "imagenet-r": 76.8167,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.7882,
+      "mean_accuracy": 84.4136
+    }
+  },
+  {
+    "number": 57,
+    "value": 84.3979,
+    "params": {
+      "reg_alpha": 0.03660911408825407
+    },
+    "metrics": {
+      "imagenet-r": 76.3333,
+      "cifar100_224": 90.26,
+      "cub200_224": 87.8495,
+      "cars196_224": 83.1489,
+      "mean_accuracy": 84.3979
+    }
+  },
+  {
+    "number": 58,
+    "value": 84.359,
+    "params": {
+      "reg_alpha": 0.10309570114320685
+    },
+    "metrics": {
+      "imagenet-r": 76.3833,
+      "cifar100_224": 90.08,
+      "cub200_224": 87.9358,
+      "cars196_224": 83.0369,
+      "mean_accuracy": 84.359
+    }
+  },
+  {
+    "number": 59,
+    "value": 84.4008,
+    "params": {
+      "reg_alpha": 0.26862401060053787
+    },
+    "metrics": {
+      "imagenet-r": 76.9667,
+      "cifar100_224": 89.99,
+      "cub200_224": 87.9703,
+      "cars196_224": 82.6763,
+      "mean_accuracy": 84.4008
+    }
+  },
+  {
+    "number": 60,
+    "value": 84.4638,
+    "params": {
+      "reg_alpha": 0.18271615787550005
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.06,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.9374,
+      "mean_accuracy": 84.4638
+    }
+  },
+  {
+    "number": 61,
+    "value": 84.4669,
+    "params": {
+      "reg_alpha": 0.18195473772428541
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.06,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.9499,
+      "mean_accuracy": 84.4669
+    }
+  },
+  {
+    "number": 62,
+    "value": 83.4971,
+    "params": {
+      "reg_alpha": 0.8298198749569319
+    },
+    "metrics": {
+      "imagenet-r": 77.6,
+      "cifar100_224": 89.77,
+      "cub200_224": 88.1084,
+      "cars196_224": 78.5101,
+      "mean_accuracy": 83.4971
+    }
+  },
+  {
+    "number": 63,
+    "value": 84.4064,
+    "params": {
+      "reg_alpha": 0.1410051207849478
+    },
+    "metrics": {
+      "imagenet-r": 76.6333,
+      "cifar100_224": 90.01,
+      "cub200_224": 87.9703,
+      "cars196_224": 83.0121,
+      "mean_accuracy": 84.4064
+    }
+  },
+  {
+    "number": 64,
+    "value": 84.4273,
+    "params": {
+      "reg_alpha": 0.21020323606783703
+    },
+    "metrics": {
+      "imagenet-r": 76.8,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.8255,
+      "mean_accuracy": 84.4273
+    }
+  },
+  {
+    "number": 65,
+    "value": 84.4532,
+    "params": {
+      "reg_alpha": 0.1901997381977075
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.1084,
+      "cars196_224": 82.8877,
+      "mean_accuracy": 84.4532
+    }
+  },
+  {
+    "number": 66,
+    "value": 84.4108,
+    "params": {
+      "reg_alpha": 0.14284481955301037
+    },
+    "metrics": {
+      "imagenet-r": 76.6333,
+      "cifar100_224": 90.01,
+      "cub200_224": 87.9876,
+      "cars196_224": 83.0121,
+      "mean_accuracy": 84.4108
+    }
+  },
+  {
+    "number": 67,
+    "value": 84.1069,
+    "params": {
+      "reg_alpha": 0.0017017306314665304
+    },
+    "metrics": {
+      "imagenet-r": 76.1,
+      "cifar100_224": 90.27,
+      "cub200_224": 87.3317,
+      "cars196_224": 82.726,
+      "mean_accuracy": 84.1069
+    }
+  },
+  {
+    "number": 68,
+    "value": 84.3775,
+    "params": {
+      "reg_alpha": 0.3232162679590409
+    },
+    "metrics": {
+      "imagenet-r": 77.0333,
+      "cifar100_224": 90.0,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.4027,
+      "mean_accuracy": 84.3775
+    }
+  },
+  {
+    "number": 69,
+    "value": 84.4039,
+    "params": {
+      "reg_alpha": 0.25893678400353826
+    },
+    "metrics": {
+      "imagenet-r": 76.9167,
+      "cifar100_224": 90.01,
+      "cub200_224": 87.9876,
+      "cars196_224": 82.7012,
+      "mean_accuracy": 84.4039
+    }
+  },
+  {
+    "number": 70,
+    "value": 84.3553,
+    "params": {
+      "reg_alpha": 0.09250566653614761
+    },
+    "metrics": {
+      "imagenet-r": 76.3333,
+      "cifar100_224": 90.1,
+      "cub200_224": 87.9013,
+      "cars196_224": 83.0867,
+      "mean_accuracy": 84.3553
+    }
+  },
+  {
+    "number": 71,
+    "value": 84.4643,
+    "params": {
+      "reg_alpha": 0.17629369458792138
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.9499,
+      "mean_accuracy": 84.4643
+    }
+  },
+  {
+    "number": 72,
+    "value": 84.4643,
+    "params": {
+      "reg_alpha": 0.17600363656439608
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.9499,
+      "mean_accuracy": 84.4643
+    }
+  },
+  {
+    "number": 73,
+    "value": 84.412,
+    "params": {
+      "reg_alpha": 0.21958338614383685
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.02,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.7882,
+      "mean_accuracy": 84.412
+    }
+  },
+  {
+    "number": 74,
+    "value": 84.4705,
+    "params": {
+      "reg_alpha": 0.17814478230699976
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.9748,
+      "mean_accuracy": 84.4705
+    }
+  },
+  {
+    "number": 75,
+    "value": 84.4145,
+    "params": {
+      "reg_alpha": 0.12826682902840764
+    },
+    "metrics": {
+      "imagenet-r": 76.5833,
+      "cifar100_224": 90.03,
+      "cub200_224": 87.9703,
+      "cars196_224": 83.0742,
+      "mean_accuracy": 84.4145
+    }
+  },
+  {
+    "number": 76,
+    "value": 84.4619,
+    "params": {
+      "reg_alpha": 0.18925976469230446
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.06,
+      "cub200_224": 88.1084,
+      "cars196_224": 82.9126,
+      "mean_accuracy": 84.4619
+    }
+  },
+  {
+    "number": 77,
+    "value": 84.3999,
+    "params": {
+      "reg_alpha": 0.2788566702125438
+    },
+    "metrics": {
+      "imagenet-r": 76.9833,
+      "cifar100_224": 89.98,
+      "cub200_224": 88.0221,
+      "cars196_224": 82.6141,
+      "mean_accuracy": 84.3999
+    }
+  },
+  {
+    "number": 78,
+    "value": 84.3649,
+    "params": {
+      "reg_alpha": 0.0983848876195954
+    },
+    "metrics": {
+      "imagenet-r": 76.35,
+      "cifar100_224": 90.09,
+      "cub200_224": 87.9703,
+      "cars196_224": 83.0494,
+      "mean_accuracy": 84.3649
+    }
+  },
+  {
+    "number": 79,
+    "value": 84.4085,
+    "params": {
+      "reg_alpha": 0.24233083234092145
+    },
+    "metrics": {
+      "imagenet-r": 76.8833,
+      "cifar100_224": 89.99,
+      "cub200_224": 88.0221,
+      "cars196_224": 82.7385,
+      "mean_accuracy": 84.4085
+    }
+  },
+  {
+    "number": 80,
+    "value": 84.0943,
+    "params": {
+      "reg_alpha": 0.5737859551579705
+    },
+    "metrics": {
+      "imagenet-r": 77.4,
+      "cifar100_224": 89.85,
+      "cub200_224": 88.2292,
+      "cars196_224": 80.8979,
+      "mean_accuracy": 84.0943
+    }
+  },
+  {
+    "number": 81,
+    "value": 84.4489,
+    "params": {
+      "reg_alpha": 0.19173838046563532
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.8877,
+      "mean_accuracy": 84.4489
+    }
+  },
+  {
+    "number": 82,
+    "value": 84.4736,
+    "params": {
+      "reg_alpha": 0.1788194493551834
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.9872,
+      "mean_accuracy": 84.4736
+    }
+  },
+  {
+    "number": 83,
+    "value": 84.4149,
+    "params": {
+      "reg_alpha": 0.14431979305426818
+    },
+    "metrics": {
+      "imagenet-r": 76.65,
+      "cifar100_224": 90.01,
+      "cub200_224": 87.9876,
+      "cars196_224": 83.0121,
+      "mean_accuracy": 84.4149
+    }
+  },
+  {
+    "number": 84,
+    "value": 84.4077,
+    "params": {
+      "reg_alpha": 0.2184247012129637
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.02,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.7882,
+      "mean_accuracy": 84.4077
+    }
+  },
+  {
+    "number": 85,
+    "value": 84.4649,
+    "params": {
+      "reg_alpha": 0.17447894451771448
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4649
+    }
+  },
+  {
+    "number": 86,
+    "value": 84.3929,
+    "params": {
+      "reg_alpha": 0.2577692287235487
+    },
+    "metrics": {
+      "imagenet-r": 76.9,
+      "cifar100_224": 90.0,
+      "cub200_224": 87.9703,
+      "cars196_224": 82.7012,
+      "mean_accuracy": 84.3929
+    }
+  },
+  {
+    "number": 87,
+    "value": 84.4159,
+    "params": {
+      "reg_alpha": 0.11647318136627638
+    },
+    "metrics": {
+      "imagenet-r": 76.5167,
+      "cifar100_224": 90.09,
+      "cub200_224": 87.9703,
+      "cars196_224": 83.0867,
+      "mean_accuracy": 84.4159
+    }
+  },
+  {
+    "number": 88,
+    "value": 84.3902,
+    "params": {
+      "reg_alpha": 0.04075470008009818
+    },
+    "metrics": {
+      "imagenet-r": 76.3,
+      "cifar100_224": 90.25,
+      "cub200_224": 87.8495,
+      "cars196_224": 83.1613,
+      "mean_accuracy": 84.3902
+    }
+  },
+  {
+    "number": 89,
+    "value": 84.3623,
+    "params": {
+      "reg_alpha": 0.3565080698277996
+    },
+    "metrics": {
+      "imagenet-r": 77.1167,
+      "cifar100_224": 89.99,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.3032,
+      "mean_accuracy": 84.3623
+    }
+  },
+  {
+    "number": 90,
+    "value": 84.4034,
+    "params": {
+      "reg_alpha": 0.3008914107128691
+    },
+    "metrics": {
+      "imagenet-r": 77.0,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0394,
+      "cars196_224": 82.5644,
+      "mean_accuracy": 84.4034
+    }
+  },
+  {
+    "number": 91,
+    "value": 84.4606,
+    "params": {
+      "reg_alpha": 0.1720764702277006
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.04,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4606
+    }
+  },
+  {
+    "number": 92,
+    "value": 84.4354,
+    "params": {
+      "reg_alpha": 0.20782075800239647
+    },
+    "metrics": {
+      "imagenet-r": 76.8,
+      "cifar100_224": 90.0,
+      "cub200_224": 88.0911,
+      "cars196_224": 82.8504,
+      "mean_accuracy": 84.4354
+    }
+  },
+  {
+    "number": 93,
+    "value": 84.4674,
+    "params": {
+      "reg_alpha": 0.17791476167693926
+    },
+    "metrics": {
+      "imagenet-r": 76.7833,
+      "cifar100_224": 90.05,
+      "cub200_224": 88.0739,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4674
+    }
+  },
+  {
+    "number": 94,
+    "value": 84.4235,
+    "params": {
+      "reg_alpha": 0.15706363158723058
+    },
+    "metrics": {
+      "imagenet-r": 76.7167,
+      "cifar100_224": 90.01,
+      "cub200_224": 88.0048,
+      "cars196_224": 82.9623,
+      "mean_accuracy": 84.4235
+    }
+  },
+  {
+    "number": 95,
+    "value": 84.3636,
+    "params": {
+      "reg_alpha": 0.08096893190869568
+    },
+    "metrics": {
+      "imagenet-r": 76.3333,
+      "cifar100_224": 90.14,
+      "cub200_224": 87.8322,
+      "cars196_224": 83.1489,
+      "mean_accuracy": 84.3636
+    }
+  },
+  {
+    "number": 96,
+    "value": 84.3955,
+    "params": {
+      "reg_alpha": 0.13689579582328956
+    },
+    "metrics": {
+      "imagenet-r": 76.6167,
+      "cifar100_224": 90.03,
+      "cub200_224": 87.9358,
+      "cars196_224": 82.9996,
+      "mean_accuracy": 84.3955
+    }
+  },
+  {
+    "number": 97,
+    "value": 84.4068,
+    "params": {
+      "reg_alpha": 0.2396682412778745
+    },
+    "metrics": {
+      "imagenet-r": 76.8667,
+      "cifar100_224": 90.0,
+      "cub200_224": 88.0221,
+      "cars196_224": 82.7385,
+      "mean_accuracy": 84.4068
+    }
+  },
+  {
+    "number": 98,
+    "value": 84.4079,
+    "params": {
+      "reg_alpha": 0.22094910556631783
+    },
+    "metrics": {
+      "imagenet-r": 76.7667,
+      "cifar100_224": 90.02,
+      "cub200_224": 88.0566,
+      "cars196_224": 82.7882,
+      "mean_accuracy": 84.4079
+    }
+  },
+  {
+    "number": 99,
+    "value": 84.3648,
+    "params": {
+      "reg_alpha": 0.06040490453259134
+    },
+    "metrics": {
+      "imagenet-r": 76.4,
+      "cifar100_224": 90.19,
+      "cub200_224": 87.8322,
+      "cars196_224": 83.0369,
+      "mean_accuracy": 84.3648
+    }
+  }
+]

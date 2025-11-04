@@ -68,16 +68,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     cls = parser.add_argument_group('class', 'Class increment settings')
     cls.add_argument('--init_cls', type=int, default=10, help='Number of classes in the first task.')
-    cls.add_argument('--increment', type=int, default=0, help='Number of new classes added per task.')
+    cls.add_argument('--increment', type=int, default=10, help='Number of new classes added per task.')
 
     model = parser.add_argument_group('model', 'Backbone & LoRA settings')
     model.add_argument('--model_name', type=str, default='sldc', help='Model identifier.')
-    model.add_argument('--vit_type', type=str, default='vit-b-p16-mocov3', choices=['vit-b-p16', 'vit-b-p16-dino', 'vit-b-p16-mae', 'vit-b-p16-clip', 'vit-b-p16-mocov3'], help='ViT backbone variant.')
+    model.add_argument('--vit_type', type=str, default='vit-b-p16', choices=['vit-b-p16', 'vit-b-p16-dino', 'vit-b-p16-mae', 'vit-b-p16-clip', 'vit-b-p16-mocov3'], help='ViT backbone variant.')
     model.add_argument('--weight_decay', type=float, default=3e-5, help='Weight decay.')
 
     train_grp = parser.add_argument_group('training', 'Optimisation & schedule')  
     train_grp.add_argument('--seed_list', nargs='+', type=int, default=[1993, 1996, 1997], help='Random seeds for multiple runs.')
-    train_grp.add_argument('--iterations', type=int, default=200, help='Training iterations per task.')
+    train_grp.add_argument('--iterations', type=int, default=2000, help='Training iterations per task.')
     train_grp.add_argument('--warmup_ratio', type=int, default=0.1, help='Warm‑up ratio for learning rate schedule.')
     train_grp.add_argument('--ca_epochs', type=int, default=5, help='Classifier alignment epochs.')
     train_grp.add_argument('--optimizer', type=str, default='adamw', help='Optimizer name (adamw / sgd).')
@@ -85,7 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_grp.add_argument('--batch_size', type=int, default=16, help='Batch size.')
     train_grp.add_argument('--evaluate_final_only', action=argparse.BooleanOptionalAction, default=True)
     train_grp.add_argument('--gamma_kd', type=float, default=0.0, help='Knowledge‑distillation weight.')
-    train_grp.add_argument('--update_teacher_each_task', type=bool, default=False, help='If set, update the teacher network after each task.')
+    train_grp.add_argument('--update_teacher_each_task', type=bool, default=True, help='If set, update the teacher network after each task.')
     train_grp.add_argument('--use_aux_for_kd', action='store_true', default=False, help='If set, use auxiliary data for KD.')
     train_grp.add_argument('--kd_type', type=str, default='feat', help='KD type (feat / logit).')
     train_grp.add_argument('--distillation_transform', type=str, default='linear', help='Distillation head transform (identity / linear / weaknonlinear).')

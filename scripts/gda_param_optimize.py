@@ -359,7 +359,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("experiments/gda_param_optuna"),
+        default=Path("experiments/gda_param_optuna_vit_b16"),
         help="Directory to store optimisation artefacts.",
     )
     parser.add_argument(
@@ -371,7 +371,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--n-trials",
         type=int,
-        default=200,
+        default=100,
         help="Number of Optuna trials for each classifier type.",
     )
     parser.add_argument(

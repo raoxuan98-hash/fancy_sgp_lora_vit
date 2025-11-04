@@ -1,0 +1,35 @@
+{
+  "last_task_id": 1,
+  "last_task_accuracies": {
+    "SeqFT + LDA": 83.05,
+    "SeqFT + QDA": 86.34,
+    "SeqFT + attention_transform + LDA": 83.05,
+    "SeqFT + attention_transform + QDA": 86.34,
+    "SeqFT + linear_transform + LDA": 83.05,
+    "SeqFT + linear_transform + QDA": 86.34,
+    "SeqFT + weaknonlinear_transform + LDA": 83.05,
+    "SeqFT + weaknonlinear_transform + QDA": 86.34
+  },
+  "average_accuracies": {
+    "SeqFT + LDA": 83.05,
+    "SeqFT + QDA": 86.34,
+    "SeqFT + attention_transform + LDA": 83.05,
+    "SeqFT + attention_transform + QDA": 86.34,
+    "SeqFT + linear_transform + LDA": 83.05,
+    "SeqFT + linear_transform + QDA": 86.34,
+    "SeqFT + weaknonlinear_transform + LDA": 83.05,
+    "SeqFT + weaknonlinear_transform + QDA": 86.34
+  },
+  "per_task_results": {
+    "1": {
+      "SeqFT + LDA": 83.05,
+      "SeqFT + linear_transform + LDA": 83.05,
+      "SeqFT + weaknonlinear_transform + LDA": 83.05,
+      "SeqFT + attention_transform + LDA": 83.05,
+      "SeqFT + QDA": 86.34,
+      "SeqFT + linear_transform + QDA": 86.34,
+      "SeqFT + weaknonlinear_transform + QDA": 86.34,
+      "SeqFT + attention_transform + QDA": 86.34
+    }
+  }
+}
