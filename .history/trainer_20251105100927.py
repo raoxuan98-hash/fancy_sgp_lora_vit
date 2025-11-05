@@ -296,7 +296,6 @@ def build_log_dirs(args: dict, root_dir="."):
                 params.append(f"t-{short(args['weight_temp'])}")
             if 'weight_kind' in args:
                 params.append(f"k-{short(args['weight_kind'])}")
-            # 始终包含 weight_p 参数，即使是默认值，以确保不同参数组合的实验结果被正确区分
             if 'weight_p' in args:
                 params.append(f"p-{short(args['weight_p'])}")
                 

@@ -1,0 +1,18 @@
+{
+  "model_name": "sldc",
+  "user": "test",
+  "dataset": "cifar100_224",
+  "vit_type": "vit-b-p16-mocov3",
+  "init_cls": 10,
+  "increment": 10,
+  "lora_rank": 4,
+  "lora_type": "sgp_lora",
+  "weight_temp": 2.0,
+  "weight_kind": "log1p",
+  "weight_p": 1.0,
+  "optimizer": "adamw",
+  "lrate": 0.0001,
+  "batch_size": 16,
+  "iterations": 2000,
+  "seed": 1993
+}

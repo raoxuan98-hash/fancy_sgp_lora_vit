@@ -21,28 +21,15 @@ def train(args):
         
         # Configure logging with unbuffered file handler for real-time updates
         log_file_path = os.path.join(logfile_name, 'record.log')
-        
-        # 清除现有的日志处理器，避免冲突
-        root_logger = logging.getLogger()
-        for handler in root_logger.handlers[:]:
-            root_logger.removeHandler(handler)
-        
-        # 创建文件处理器
         file_handler = logging.FileHandler(filename=log_file_path, mode='a', encoding='utf-8')
         file_handler.stream.reconfigure(line_buffering=True)  # Enable line buffering
         
-        # 创建控制台处理器
-        console_handler = logging.StreamHandler(sys.stdout)
-        
-        # 设置格式
-        formatter = logging.Formatter('%(asctime)s [%(filename)s] => %(message)s')
-        file_handler.setFormatter(formatter)
-        console_handler.setFormatter(formatter)
-        
-        # 配置根日志记录器
-        root_logger.setLevel(logging.INFO)
-        root_logger.addHandler(file_handler)
-        root_logger.addHandler(console_handler)
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s [%(filename)s] => %(message)s',
+            handlers=[
+                file_handler,
+                logging.StreamHandler(sys.stdout)])
         
         # 打印日志文件路径，方便用户查找
         print(f"📁 日志文件路径: {log_file_path}")
@@ -75,11 +62,6 @@ def train_single_run(args, return_model: bool = False):
     logging.info(f'All params: {count_parameters(model.network)}')
     logging.info(f'Trainable params: {count_parameters(model.network, True)}')
     final_results = model.loop(data_manager)
-    
-    # 添加log_path到结果中，以便aggregate_seed_results可以找到它
-    if 'log_path' in args:
-        final_results['log_path'] = args['log_path']
-    
     if return_model:
         return final_results, model
     return final_results
@@ -109,28 +91,17 @@ def Bayesian_evaluate(args):
     
     # Configure logging with unbuffered file handler for real-time updates
     log_file_path = os.path.join(logfile_name, 'record.log')
-    
-    # 清除现有的日志处理器，避免冲突
-    root_logger = logging.getLogger()
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-    
-    # 创建文件处理器
     file_handler = logging.FileHandler(filename=log_file_path, mode='a', encoding='utf-8')
     file_handler.stream.reconfigure(line_buffering=True)  # Enable line buffering
     
-    # 创建控制台处理器
-    console_handler = logging.StreamHandler(sys.stdout)
-    
-    # 设置格式
-    formatter = logging.Formatter('%(asctime)s [%(filename)s] => %(message)s')
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
-    
-    # 配置根日志记录器
-    root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(file_handler)
-    root_logger.addHandler(console_handler)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(filename)s] => %(message)s',
+        handlers=[
+            file_handler,
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
     
     # 打印日志文件路径，方便用户查找
     print(f"📁 日志文件路径: {log_file_path}")
@@ -296,7 +267,6 @@ def build_log_dirs(args: dict, root_dir="."):
                 params.append(f"t-{short(args['weight_temp'])}")
             if 'weight_kind' in args:
                 params.append(f"k-{short(args['weight_kind'])}")
-            # 始终包含 weight_p 参数，即使是默认值，以确保不同参数组合的实验结果被正确区分
             if 'weight_p' in args:
                 params.append(f"p-{short(args['weight_p'])}")
                 
@@ -410,8 +380,17 @@ def build_log_dirs(args: dict, root_dir="."):
         with open(params_json, "w", encoding="utf-8") as f:
             json.dump(filtered_args, f, ensure_ascii=False, indent=2)
 
-    # 注意：这里不能使用 logging.info，因为日志还没有配置
-    # 目录信息会在日志配置完成后通过 print_args 函数记录
+    # 记录生成的目录结构（用于调试）
+    logging.info(f"📁 Log directory created: {abs_log_dir}")
+    logging.info(f"   LoRA params: {lora_params}")
+    logging.info(f"   KD params: {kd_params}")
+    
+    # 记录过滤信息
+    original_params = set(args.keys())
+    filtered_params = set(filtered_args.keys())
+    removed_params = original_params - filtered_params
+    if removed_params:
+        logging.info(f"   过滤掉的参数: {sorted(removed_params)}")
 
     return os.path.dirname(abs_log_dir), str(abs_log_dir)
 

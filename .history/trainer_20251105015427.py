@@ -75,11 +75,6 @@ def train_single_run(args, return_model: bool = False):
     logging.info(f'All params: {count_parameters(model.network)}')
     logging.info(f'Trainable params: {count_parameters(model.network, True)}')
     final_results = model.loop(data_manager)
-    
-    # 添加log_path到结果中，以便aggregate_seed_results可以找到它
-    if 'log_path' in args:
-        final_results['log_path'] = args['log_path']
-    
     if return_model:
         return final_results, model
     return final_results
@@ -296,7 +291,6 @@ def build_log_dirs(args: dict, root_dir="."):
                 params.append(f"t-{short(args['weight_temp'])}")
             if 'weight_kind' in args:
                 params.append(f"k-{short(args['weight_kind'])}")
-            # 始终包含 weight_p 参数，即使是默认值，以确保不同参数组合的实验结果被正确区分
             if 'weight_p' in args:
                 params.append(f"p-{short(args['weight_p'])}")
                 
@@ -410,8 +404,17 @@ def build_log_dirs(args: dict, root_dir="."):
         with open(params_json, "w", encoding="utf-8") as f:
             json.dump(filtered_args, f, ensure_ascii=False, indent=2)
 
-    # 注意：这里不能使用 logging.info，因为日志还没有配置
-    # 目录信息会在日志配置完成后通过 print_args 函数记录
+    # 记录生成的目录结构（用于调试）
+    logging.info(f"📁 Log directory created: {abs_log_dir}")
+    logging.info(f"   LoRA params: {lora_params}")
+    logging.info(f"   KD params: {kd_params}")
+    
+    # 记录过滤信息
+    original_params = set(args.keys())
+    filtered_params = set(filtered_args.keys())
+    removed_params = original_params - filtered_params
+    if removed_params:
+        logging.info(f"   过滤掉的参数: {sorted(removed_params)}")
 
     return os.path.dirname(abs_log_dir), str(abs_log_dir)
 

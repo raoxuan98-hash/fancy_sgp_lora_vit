@@ -19,35 +19,12 @@ def train(args):
         logfile_head, logfile_name = build_log_dirs(args)
         args['log_path'] = logfile_name
         
-        # Configure logging with unbuffered file handler for real-time updates
-        log_file_path = os.path.join(logfile_name, 'record.log')
-        
-        # 清除现有的日志处理器，避免冲突
-        root_logger = logging.getLogger()
-        for handler in root_logger.handlers[:]:
-            root_logger.removeHandler(handler)
-        
-        # 创建文件处理器
-        file_handler = logging.FileHandler(filename=log_file_path, mode='a', encoding='utf-8')
-        file_handler.stream.reconfigure(line_buffering=True)  # Enable line buffering
-        
-        # 创建控制台处理器
-        console_handler = logging.StreamHandler(sys.stdout)
-        
-        # 设置格式
-        formatter = logging.Formatter('%(asctime)s [%(filename)s] => %(message)s')
-        file_handler.setFormatter(formatter)
-        console_handler.setFormatter(formatter)
-        
-        # 配置根日志记录器
-        root_logger.setLevel(logging.INFO)
-        root_logger.addHandler(file_handler)
-        root_logger.addHandler(console_handler)
-        
-        # 打印日志文件路径，方便用户查找
-        print(f"📁 日志文件路径: {log_file_path}")
-        print(f"💡 提示: 使用 'tail -f {log_file_path}' 实时查看日志")
-        print("-" * 80)
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s [%(filename)s] => %(message)s',
+            handlers=[
+                logging.FileHandler(filename=os.path.join(logfile_name, 'record.log')),
+                logging.StreamHandler(sys.stdout)])
         
         args['log_path'] = logfile_name
         results = train_single_run(args)
@@ -75,11 +52,6 @@ def train_single_run(args, return_model: bool = False):
     logging.info(f'All params: {count_parameters(model.network)}')
     logging.info(f'Trainable params: {count_parameters(model.network, True)}')
     final_results = model.loop(data_manager)
-    
-    # 添加log_path到结果中，以便aggregate_seed_results可以找到它
-    if 'log_path' in args:
-        final_results['log_path'] = args['log_path']
-    
     if return_model:
         return final_results, model
     return final_results
@@ -107,35 +79,14 @@ def Bayesian_evaluate(args):
     args['log_path'] = logfile_name
 
     
-    # Configure logging with unbuffered file handler for real-time updates
-    log_file_path = os.path.join(logfile_name, 'record.log')
-    
-    # 清除现有的日志处理器，避免冲突
-    root_logger = logging.getLogger()
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-    
-    # 创建文件处理器
-    file_handler = logging.FileHandler(filename=log_file_path, mode='a', encoding='utf-8')
-    file_handler.stream.reconfigure(line_buffering=True)  # Enable line buffering
-    
-    # 创建控制台处理器
-    console_handler = logging.StreamHandler(sys.stdout)
-    
-    # 设置格式
-    formatter = logging.Formatter('%(asctime)s [%(filename)s] => %(message)s')
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
-    
-    # 配置根日志记录器
-    root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(file_handler)
-    root_logger.addHandler(console_handler)
-    
-    # 打印日志文件路径，方便用户查找
-    print(f"📁 日志文件路径: {log_file_path}")
-    print(f"💡 提示: 使用 'tail -f {log_file_path}' 实时查看日志")
-    print("-" * 80)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(filename)s] => %(message)s',
+        handlers=[
+            logging.FileHandler(filename=os.path.join(logfile_name, 'record.log')),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
 
 
     # Initialize data manager and model
@@ -218,12 +169,10 @@ def _fmt(x, *, digits=4):
         return str(x)
     try:
         s = f"{float(x):.{digits}g}"
-        s = s.replace('.', 'p')
-        return s
     except Exception:
         s = str(x)
-        s = s.replace('.', 'p')
-        return s
+    s = s.replace('.', 'p')
+    return s
 
 from pathlib import Path
 import os
@@ -235,38 +184,6 @@ import os
 from pathlib import Path
 import hashlib
 import json
-
-def _filter_args_by_lora_type(args: dict) -> dict:
-    """
-    过滤参数字典，只保留与当前LoRA类型相关的参数
-    这样可以避免在params.json中保存不相关的参数，导致日志命名混乱
-    """
-    lora_type = args.get('lora_type', 'basic_lora')
-    filtered_args = args.copy()
-    
-    # 定义每种LoRA类型相关的参数
-    sgp_lora_params = {'weight_temp', 'weight_kind', 'weight_p'}
-    nsp_lora_params = {'nsp_eps', 'nsp_weight'}
-    
-    # 移除与当前LoRA类型不相关的参数
-    if lora_type == 'sgp_lora':
-        # 保留SGP参数，移除NSP参数
-        for param in nsp_lora_params:
-            filtered_args.pop(param, None)
-    elif lora_type == 'nsp_lora':
-        # 保留NSP参数，移除SGP参数
-        for param in sgp_lora_params:
-            filtered_args.pop(param, None)
-    elif lora_type == 'basic_lora':
-        # 移除所有LoRA特定参数
-        for param in sgp_lora_params.union(nsp_lora_params):
-            filtered_args.pop(param, None)
-    elif lora_type == 'full':
-        # 移除所有LoRA特定参数
-        for param in sgp_lora_params.union(nsp_lora_params):
-            filtered_args.pop(param, None)
-    
-    return filtered_args
 
 def build_log_dirs(args: dict, root_dir="."):
     """根据 args 构建多级日志目录，确保不同 LoRA 类型的参数正确分离"""
@@ -296,7 +213,6 @@ def build_log_dirs(args: dict, root_dir="."):
                 params.append(f"t-{short(args['weight_temp'])}")
             if 'weight_kind' in args:
                 params.append(f"k-{short(args['weight_kind'])}")
-            # 始终包含 weight_p 参数，即使是默认值，以确保不同参数组合的实验结果被正确区分
             if 'weight_p' in args:
                 params.append(f"p-{short(args['weight_p'])}")
                 
@@ -318,7 +234,7 @@ def build_log_dirs(args: dict, root_dir="."):
         return params
 
     def _get_kd_params(args: dict) -> list:
-        """获取知识蒸馏相关参数，统一命名规则"""
+        """获取知识蒸馏相关参数"""
         kd_params = []
         
         if args.get('gamma_kd', 0.0) > 0.0:
@@ -329,9 +245,6 @@ def build_log_dirs(args: dict, root_dir="."):
                 kd_params.append(f"dt-{short(args['distillation_transform'])}")
             if args.get('use_aux_for_kd', False):
                 kd_params.append("aux")
-            # 添加update_teacher_each_task参数，简写为utt
-            if 'update_teacher_each_task' in args:
-                kd_params.append(f"utt-{short(args['update_teacher_each_task'])}")
                 
         return kd_params
 
@@ -403,15 +316,16 @@ def build_log_dirs(args: dict, root_dir="."):
         current = Path(current) / part
         current.mkdir(exist_ok=True)
 
-    # 保存过滤后的参数到 JSON，避免参数交叉污染
-    filtered_args = _filter_args_by_lora_type(args)
+    # 保存原始参数到 JSON
     params_json = Path(abs_log_dir) / "params.json"
     if not params_json.exists():
         with open(params_json, "w", encoding="utf-8") as f:
-            json.dump(filtered_args, f, ensure_ascii=False, indent=2)
+            json.dump(args, f, ensure_ascii=False, indent=2)
 
-    # 注意：这里不能使用 logging.info，因为日志还没有配置
-    # 目录信息会在日志配置完成后通过 print_args 函数记录
+    # 记录生成的目录结构（用于调试）
+    logging.info(f"📁 Log directory created: {abs_log_dir}")
+    logging.info(f"   LoRA params: {lora_params}")
+    logging.info(f"   KD params: {kd_params}")
 
     return os.path.dirname(abs_log_dir), str(abs_log_dir)
 
