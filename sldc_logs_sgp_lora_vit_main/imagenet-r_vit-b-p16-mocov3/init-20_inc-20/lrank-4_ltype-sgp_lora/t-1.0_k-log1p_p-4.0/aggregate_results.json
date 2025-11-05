@@ -1,0 +1,85 @@
+{
+  "final_task_stats": {
+    "SeqFT + LDA": {
+      "mean": 68.08,
+      "std": 0.0
+    },
+    "SeqFT + QDA": {
+      "mean": 73.58,
+      "std": 0.0
+    },
+    "SeqFT + attention_transform + LDA": {
+      "mean": 69.15,
+      "std": 0.0
+    },
+    "SeqFT + attention_transform + QDA": {
+      "mean": 74.23,
+      "std": 0.0
+    },
+    "SeqFT + linear_transform + LDA": {
+      "mean": 69.95,
+      "std": 0.0
+    },
+    "SeqFT + linear_transform + QDA": {
+      "mean": 73.55,
+      "std": 0.0
+    },
+    "SeqFT + weaknonlinear_transform + LDA": {
+      "mean": 69.2,
+      "std": 0.0
+    },
+    "SeqFT + weaknonlinear_transform + QDA": {
+      "mean": 74.28,
+      "std": 0.0
+    }
+  },
+  "average_across_tasks_stats": {
+    "SeqFT + LDA": {
+      "mean": 74.59200000000001,
+      "std": 0.0
+    },
+    "SeqFT + QDA": {
+      "mean": 79.06700000000002,
+      "std": 0.0
+    },
+    "SeqFT + attention_transform + LDA": {
+      "mean": 75.051,
+      "std": 0.0
+    },
+    "SeqFT + attention_transform + QDA": {
+      "mean": 79.374,
+      "std": 0.0
+    },
+    "SeqFT + linear_transform + LDA": {
+      "mean": 75.60400000000001,
+      "std": 0.0
+    },
+    "SeqFT + linear_transform + QDA": {
+      "mean": 78.789,
+      "std": 0.0
+    },
+    "SeqFT + weaknonlinear_transform + LDA": {
+      "mean": 75.08200000000001,
+      "std": 0.0
+    },
+    "SeqFT + weaknonlinear_transform + QDA": {
+      "mean": 79.402,
+      "std": 0.0
+    }
+  },
+  "seed_list": [
+    "seed_1993"
+  ],
+  "num_seeds": 1,
+  "timestamp": "2025-11-05 13:34:58",
+  "variants": [
+    "SeqFT + LDA",
+    "SeqFT + QDA",
+    "SeqFT + attention_transform + LDA",
+    "SeqFT + attention_transform + QDA",
+    "SeqFT + linear_transform + LDA",
+    "SeqFT + linear_transform + QDA",
+    "SeqFT + weaknonlinear_transform + LDA",
+    "SeqFT + weaknonlinear_transform + QDA"
+  ]
+}

@@ -1,0 +1,474 @@
+{
+  "cars196_224": {
+    "1.0": {
+      "1.0": {
+        "log_path": "logs/full_method_20251105_021132/cars196_224_temp1.0_p1.0_seed1993.log",
+        "dataset": "cars196_224",
+        "weight_temp": 1.0,
+        "weight_p": 1.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 78.51,
+          "SeqFT + QDA": 83.23,
+          "transform + LDA": 85.17,
+          "transform + QDA": 87.22,
+          "SeqFT + attention_transform + QDA": 83.41
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 78.51,
+          "SeqFT + QDA": 83.23,
+          "transform + LDA": 85.17,
+          "transform + QDA": 87.22
+        },
+        "best_final": "SeqFT + attention_transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "2.0": {
+        "log_path": "logs/full_method_20251105_103253/cars196_224_temp1.0_p2.0_seed1993.log",
+        "dataset": "cars196_224",
+        "weight_temp": 1.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 79.68,
+          "SeqFT + QDA": 83.89,
+          "transform + LDA": 84.96,
+          "transform + QDA": 86.83,
+          "SeqFT + attention_transform + QDA": 82.89
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 79.68,
+          "SeqFT + QDA": 83.89,
+          "transform + LDA": 84.96,
+          "transform + QDA": 86.83
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/cars196_224_temp1.0_p4.0_seed1993.log",
+        "dataset": "cars196_224",
+        "weight_temp": 1.0,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 80.2,
+          "SeqFT + QDA": 84.11,
+          "transform + LDA": 84.91,
+          "transform + QDA": 86.67,
+          "SeqFT + attention_transform + QDA": 82.54
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 80.2,
+          "SeqFT + QDA": 84.11,
+          "transform + LDA": 84.91,
+          "transform + QDA": 86.67
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "2.0": {
+      "2.0": {
+        "log_path": "logs/full_method_20251105_112949/cars196_224_temp2.0_p2.0_seed1993.log",
+        "dataset": "cars196_224",
+        "weight_temp": 2.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 80.95,
+          "SeqFT + QDA": 84.49,
+          "transform + LDA": 84.86,
+          "transform + QDA": 86.68,
+          "SeqFT + attention_transform + QDA": 82.5
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 80.95,
+          "SeqFT + QDA": 84.49,
+          "transform + LDA": 84.86,
+          "transform + QDA": 86.68
+        },
+        "best_final": "SeqFT + attention_transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "0.5": {
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/cars196_224_temp0.5_p4.0_seed1993.log",
+        "dataset": "cars196_224",
+        "weight_temp": 0.5,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 79.25,
+          "SeqFT + QDA": 83.64,
+          "transform + LDA": 85.01,
+          "transform + QDA": 86.87,
+          "SeqFT + attention_transform + QDA": 82.94
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 79.25,
+          "SeqFT + QDA": 83.64,
+          "transform + LDA": 85.01,
+          "transform + QDA": 86.87
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    }
+  },
+  "cifar100_224": {
+    "1.0": {
+      "1.0": {
+        "log_path": "logs/full_method_20251105_021132/cifar100_224_temp1.0_p1.0_seed1993.log",
+        "dataset": "cifar100_224",
+        "weight_temp": 1.0,
+        "weight_p": 1.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 88.54,
+          "SeqFT + QDA": 90.88,
+          "transform + LDA": 89.67,
+          "transform + QDA": 91.81,
+          "SeqFT + attention_transform + QDA": 86.53
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 88.54,
+          "SeqFT + QDA": 90.88,
+          "transform + LDA": 89.67,
+          "transform + QDA": 91.81
+        },
+        "best_final": "SeqFT + attention_transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "2.0": {
+        "log_path": "logs/full_method_20251105_103253/cifar100_224_temp1.0_p2.0_seed1993.log",
+        "dataset": "cifar100_224",
+        "weight_temp": 1.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 89.21,
+          "SeqFT + QDA": 91.56,
+          "transform + LDA": 89.55,
+          "transform + QDA": 91.94,
+          "SeqFT + attention_transform + QDA": 86.75
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 89.21,
+          "SeqFT + QDA": 91.56,
+          "transform + LDA": 89.55,
+          "transform + QDA": 91.94
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/cifar100_224_temp1.0_p4.0_seed1993.log",
+        "dataset": "cifar100_224",
+        "weight_temp": 1.0,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 89.34,
+          "SeqFT + QDA": 91.75,
+          "transform + LDA": 89.52,
+          "transform + QDA": 91.89,
+          "SeqFT + attention_transform + QDA": 86.79
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 89.34,
+          "SeqFT + QDA": 91.75,
+          "transform + LDA": 89.52,
+          "transform + QDA": 91.89
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "2.0": {
+      "2.0": {
+        "log_path": "logs/full_method_20251105_112949/cifar100_224_temp2.0_p2.0_seed1993.log",
+        "dataset": "cifar100_224",
+        "weight_temp": 2.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 89.35,
+          "SeqFT + QDA": 91.74,
+          "transform + LDA": 89.48,
+          "transform + QDA": 91.86,
+          "SeqFT + attention_transform + QDA": 86.84
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 89.35,
+          "SeqFT + QDA": 91.74,
+          "transform + LDA": 89.48,
+          "transform + QDA": 91.86
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "0.5": {
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/cifar100_224_temp0.5_p4.0_seed1993.log",
+        "dataset": "cifar100_224",
+        "weight_temp": 0.5,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 89.2,
+          "SeqFT + QDA": 91.52,
+          "transform + LDA": 89.63,
+          "transform + QDA": 91.91,
+          "SeqFT + attention_transform + QDA": 86.77
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 89.2,
+          "SeqFT + QDA": 91.52,
+          "transform + LDA": 89.63,
+          "transform + QDA": 91.91
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    }
+  },
+  "cub200_224": {
+    "1.0": {
+      "1.0": {
+        "log_path": "logs/full_method_20251105_021132/cub200_224_temp1.0_p1.0_seed1993.log",
+        "dataset": "cub200_224",
+        "weight_temp": 1.0,
+        "weight_p": 1.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 83.52,
+          "SeqFT + QDA": 84.7,
+          "transform + LDA": 86.24,
+          "transform + QDA": 86.31,
+          "SeqFT + attention_transform + QDA": 81.17
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 83.52,
+          "SeqFT + QDA": 84.7,
+          "transform + LDA": 86.24,
+          "transform + QDA": 86.31
+        },
+        "best_final": "SeqFT + attention_transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "2.0": {
+        "log_path": "logs/full_method_20251105_103253/cub200_224_temp1.0_p2.0_seed1993.log",
+        "dataset": "cub200_224",
+        "weight_temp": 1.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 84.02,
+          "SeqFT + QDA": 85.0,
+          "transform + LDA": 86.2,
+          "transform + QDA": 86.22,
+          "SeqFT + attention_transform + QDA": 80.82
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 84.02,
+          "SeqFT + QDA": 85.0,
+          "transform + LDA": 86.2,
+          "transform + QDA": 86.22
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/cub200_224_temp1.0_p4.0_seed1993.log",
+        "dataset": "cub200_224",
+        "weight_temp": 1.0,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 84.37,
+          "SeqFT + QDA": 85.18,
+          "transform + LDA": 86.12,
+          "transform + QDA": 86.14,
+          "SeqFT + attention_transform + QDA": 80.65
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 84.37,
+          "SeqFT + QDA": 85.18,
+          "transform + LDA": 86.12,
+          "transform + QDA": 86.14
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "2.0": {
+      "2.0": {
+        "log_path": "logs/full_method_20251105_112949/cub200_224_temp2.0_p2.0_seed1993.log",
+        "dataset": "cub200_224",
+        "weight_temp": 2.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 84.89,
+          "SeqFT + QDA": 85.48,
+          "transform + LDA": 86.07,
+          "transform + QDA": 86.1,
+          "SeqFT + attention_transform + QDA": 80.55
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 84.89,
+          "SeqFT + QDA": 85.48,
+          "transform + LDA": 86.07,
+          "transform + QDA": 86.1
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "0.5": {
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/cub200_224_temp0.5_p4.0_seed1993.log",
+        "dataset": "cub200_224",
+        "weight_temp": 0.5,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 83.65,
+          "SeqFT + QDA": 84.74,
+          "transform + LDA": 86.19,
+          "transform + QDA": 86.2,
+          "SeqFT + attention_transform + QDA": 80.98
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 83.65,
+          "SeqFT + QDA": 84.74,
+          "transform + LDA": 86.19,
+          "transform + QDA": 86.2
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    }
+  },
+  "imagenet-r": {
+    "1.0": {
+      "1.0": {
+        "log_path": "logs/full_method_20251105_021132/imagenet-r_temp1.0_p1.0_seed1993.log",
+        "dataset": "imagenet-r",
+        "weight_temp": 1.0,
+        "weight_p": 1.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 73.46,
+          "SeqFT + QDA": 78.61,
+          "transform + LDA": 75.75,
+          "transform + QDA": 79.8,
+          "SeqFT + attention_transform + QDA": 74.62
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 73.46,
+          "SeqFT + QDA": 78.61,
+          "transform + LDA": 75.75,
+          "transform + QDA": 79.8
+        },
+        "best_final": "SeqFT + attention_transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "2.0": {
+        "log_path": "logs/full_method_20251105_103253/imagenet-r_temp1.0_p2.0_seed1993.log",
+        "dataset": "imagenet-r",
+        "weight_temp": 1.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 74.46,
+          "SeqFT + QDA": 79.07,
+          "transform + LDA": 75.34,
+          "transform + QDA": 79.49,
+          "SeqFT + attention_transform + QDA": 74.43
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 74.46,
+          "SeqFT + QDA": 79.07,
+          "transform + LDA": 75.34,
+          "transform + QDA": 79.49
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      },
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/imagenet-r_temp1.0_p4.0_seed1993.log",
+        "dataset": "imagenet-r",
+        "weight_temp": 1.0,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 74.59,
+          "SeqFT + QDA": 79.07,
+          "transform + LDA": 75.08,
+          "transform + QDA": 79.4,
+          "SeqFT + attention_transform + QDA": 74.23
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 74.59,
+          "SeqFT + QDA": 79.07,
+          "transform + LDA": 75.08,
+          "transform + QDA": 79.4
+        },
+        "best_final": "SeqFT + attention_transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "2.0": {
+      "2.0": {
+        "log_path": "logs/full_method_20251105_112949/imagenet-r_temp2.0_p2.0_seed1993.log",
+        "dataset": "imagenet-r",
+        "weight_temp": 2.0,
+        "weight_p": 2.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 74.62,
+          "SeqFT + QDA": 79.08,
+          "transform + LDA": 74.99,
+          "transform + QDA": 79.3,
+          "SeqFT + attention_transform + QDA": 74.08
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 74.62,
+          "SeqFT + QDA": 79.08,
+          "transform + LDA": 74.99,
+          "transform + QDA": 79.3
+        },
+        "best_final": "SeqFT + attention_transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    },
+    "0.5": {
+      "4.0": {
+        "log_path": "logs/full_method_20251105_121524/imagenet-r_temp0.5_p4.0_seed1993.log",
+        "dataset": "imagenet-r",
+        "weight_temp": 0.5,
+        "weight_p": 4.0,
+        "seed": 1993,
+        "final_accuracies": {
+          "SeqFT + LDA": 74.44,
+          "SeqFT + QDA": 79.05,
+          "transform + LDA": 75.31,
+          "transform + QDA": 79.46,
+          "SeqFT + attention_transform + QDA": 74.35
+        },
+        "average_accuracies": {
+          "SeqFT + LDA": 74.44,
+          "SeqFT + QDA": 79.05,
+          "transform + LDA": 75.31,
+          "transform + QDA": 79.46
+        },
+        "best_final": "transform + QDA",
+        "best_average": "transform + QDA"
+      }
+    }
+  }
+}

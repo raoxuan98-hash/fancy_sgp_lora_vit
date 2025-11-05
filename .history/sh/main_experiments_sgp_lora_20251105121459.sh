@@ -17,7 +17,7 @@ WEIGHT_KIND="log1p"
 
 # 参数网格测试
 WEIGHT_TEMP_VALUES=(0.5 1.0)
-WEIGHT_P_VALUES=(8.0)
+WEIGHT_P_VALUES=(4.0)
 
 # 创建日志目录
 LOG_DIR="logs/full_method_$(date +%Y%m%d_%H%M%S)"
