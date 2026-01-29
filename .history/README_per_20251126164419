@@ -1,0 +1,130 @@
+# 性能曲面等高线图实验使用说明
+
+## 文件说明
+
+### Python脚本
+- `classifier_ablation/experiments/exp1_performance_surface.py`: 主要实验脚本
+  - 支持命令行参数控制模型、rank、GPU等配置
+  - 生成不同rank的等高线图
+  - 输出多种cmap风格的等高线图
+
+### Shell脚本
+- `sh/run_exp1_performance_surface_parallel.sh`: 批量并行实验脚本
+  - 支持4个GPU并行运行不同实验
+  - 包含16个不同的配置组合（4个模型 × 4个rank值）
+  - 自动进程监控和结果汇总
+
+- `sh/run_exp1_quick_launch.sh`: 交互式快速启动脚本
+  - 提供友好的菜单选择界面
+  - 一次只运行单个实验
+  - 适合测试或调试单个配置
+
+## 使用方法
+
+### 1. 直接运行Python脚本
+```bash
+python classifier_ablation/experiments/exp1_performance_surface.py \
+    --model vit-b-p16 \
+    --rank 64 \
+    --gpu 0 \
+    --iterations 0 \
+    --num_shots 128
+```
+
+**参数说明：**
+- `--model`: 模型名称，支持 `vit-b-p16`, `vit-b-p16-clip`, `vit-b-p16-dino`, `vit-b-p16-mocov3`
+- `--rank`: 低秩分解的rank值，建议使用 16, 32, 64, 128
+- `--gpu`: GPU编号，0-3
+- `--iterations`: 适配迭代次数，默认0
+- `--num_shots`: 每个类别的样本数，默认128
+
+### 2. 运行交互式快速启动脚本
+```bash
+./sh/run_exp1_quick_launch.sh
+```
+然后按照菜单提示选择实验配置。
+
+### 3. 运行批量并行实验脚本
+```bash
+./sh/run_exp1_performance_surface_parallel.sh
+```
+该脚本会自动启动所有预定义的实验配置，并在后台监控执行状态。
+
+## 实验配置
+
+### 支持的模型
+1. `vit-b-p16`: 基础Vision Transformer
+2. `vit-b-p16-clip`: CLIP预训练模型
+3. `vit-b-p16-dino`: DINO预训练模型
+4. `vit-b-p16-mocov3`: MoCo v3预训练模型
+
+### 支持的Rank值
+- 16: 最低计算复杂度，可能影响性能
+- 32: 平衡计算效率和性能
+- 64: 默认值，推荐使用
+- 128: 最高计算复杂度，更好的性能
+
+### GPU分配策略
+- GPU 0: 主要运行 rank=16 的实验
+- GPU 1: 主要运行 rank=32 的实验
+- GPU 2: 主要运行 rank=64 的实验
+- GPU 3: 主要运行 rank=128 的实验
+
+## 输出文件
+
+### 目录结构
+```
+实验结果保存/分类器消融实验/
+├── {model_name}_iter{iterations}_rank{rank}/
+│   ├── exp1_contour_viridis_alpha3_zero_rank{rank}.png
+│   ├── exp1_contour_jet_alpha3_zero_rank{rank}.png
+│   ├── exp1_contour_Blues_alpha3_zero_rank{rank}.png
+│   ├── exp1_contour_Spectral_alpha3_zero_rank{rank}.png
+│   ├── {model_name}_rank{rank}_results.npz
+│   └── ... (其他实验文件)
+```
+
+### 文件说明
+- `exp1_contour_{cmap}_alpha3_zero_rank{rank}.png`: 不同颜色映射的等高线图
+- `{model_name}_rank{rank}_results.npz`: 原始实验数据（包含alpha参数值和准确率矩阵）
+
+## 监控和调试
+
+### 查看实验进度
+```bash
+# 实时查看日志
+tail -f ./logs/exp1_vit-b-p16_rank64_gpu0.log
+
+# 检查进程状态
+ps aux | grep exp1_performance_surface
+
+# 终止特定进程
+kill <PID>
+```
+
+### 批量监控
+批量脚本会自动监控所有实验进程，并在完成后生成汇总报告。
+
+## 注意事项
+
+1. **GPU内存**: 不同rank值需要不同的GPU内存，rank值越高需要的内存越多
+2. **计算时间**: rank值越高，计算时间越长
+3. **并行度**: 建议不要在同一个GPU上运行多个实验
+4. **数据路径**: 确保 `balanced_datasets` 目录存在并包含所需数据集
+5. **输出目录**: 确保有足够的磁盘空间存储等高线图和实验数据
+
+## 故障排除
+
+1. **CUDA内存不足**: 降低rank值或关闭其他GPU进程
+2. **数据加载失败**: 检查数据集路径和格式
+3. **进程卡死**: 检查GPU使用情况，可能需要重启实验
+4. **文件权限**: 确保脚本有执行权限 (`chmod +x *.sh`)
+
+## 性能建议
+
+- **开发调试**: 使用 `run_exp1_quick_launch.sh` 快速测试单个配置
+- **大规模实验**: 使用 `run_exp1_performance_surface_parallel.sh` 并行运行
+- **rank选择**: 
+  - rank=64: 平衡性能和计算效率的最佳选择
+  - rank=128: 追求最高性能，适用于高配置GPU
+  - rank=16/32: 计算资源受限时的替代方案
