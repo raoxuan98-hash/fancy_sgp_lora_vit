@@ -61,6 +61,9 @@ data/
 Thumbs.db
 .vscode/
 .idea/
+.history/
+.codebuddy/
+~/
 
 # Python packaging
 build/
